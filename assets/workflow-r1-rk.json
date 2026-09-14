@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "对抗性审查面板：R1 → Rk 收敛流程",
+    "quality_profile": "showcase",
+    "viewBox": [720, 900]
+  },
+  "lanes": [
+    { "id": "user", "label": "用户" },
+    { "id": "host", "label": "主持人" },
+    { "id": "reviewer", "label": "审核方池" },
+    { "id": "ledger", "label": "文件账本" },
+    { "id": "decision", "label": "判定" }
+  ],
+  "phases": [
+    { "id": "intake", "label": "需求接收", "fromCol": 0, "toCol": 1 },
+    { "id": "r1", "label": "R1 独立审查", "fromCol": 3, "toCol": 3, "variant": "emphasis" },
+    { "id": "ledger_review", "label": "入账 + 复核", "fromCol": 4, "toCol": 4 },
+    { "id": "converge", "label": "Rk 收敛 + 终稿", "fromCol": 5, "toCol": 5, "variant": "emphasis" }
+  ],
+  "mainPath": ["user", "intake", "spawn", "ledger", "host-rev", "converge", "final-doc"],
+  "nodes": [
+    { "id": "user", "lane": "user", "col": 0, "type": "external", "label": "用户", "sublabel": "发起审查" },
+    { "id": "intake", "lane": "host", "col": 1, "type": "backend", "label": "需求解析", "sublabel": "选审核方 + 轮次" },
+    { "id": "spawn", "lane": "host", "col": 3, "type": "messagebus", "label": "并行投喂", "sublabel": "brief → 后台" },
+    { "id": "reviewer", "lane": "reviewer", "col": 3, "type": "external", "label": "Codex × Claude", "sublabel": "独立 · 互不可见" },
+    { "id": "ledger", "lane": "ledger", "col": 4, "type": "database", "label": "REVIEW 账本", "sublabel": "draft + 历轮迭代" },
+    { "id": "host-rev", "lane": "host", "col": 5, "type": "backend", "label": "主持人复核", "sublabel": "对每家 R1 表态" },
+    { "id": "converge", "lane": "decision", "col": 5, "type": "security", "label": "收敛判定", "sublabel": "accept / revise" },
+    { "id": "final-doc", "lane": "ledger", "col": 5, "type": "database", "label": "REVIEW 终稿", "sublabel": "含讨论账本" }
+  ],
+  "edges": [
+    { "id": "e1", "from": "user", "to": "intake" },
+    { "id": "e2", "from": "intake", "to": "spawn" },
+    { "id": "e3", "from": "spawn", "to": "reviewer", "label": "投喂 brief", "fromSide": "right", "toSide": "left" },
+    { "id": "e4", "from": "reviewer", "to": "ledger", "label": "R1 报告", "fromSide": "right", "toSide": "left" },
+    { "id": "e5", "from": "spawn", "to": "ledger", "label": "写 draft", "fromSide": "top", "toSide": "top", "via": [[430, 195], [500, 195]], "labelAt": [445, 180] },
+    { "id": "e6", "from": "ledger", "to": "host-rev", "label": "复核", "fromSide": "right", "toSide": "left" },
+    { "id": "e7", "from": "host-rev", "to": "converge", "via": [[700, 269], [700, 589]] },
+    { "id": "e8", "from": "converge", "to": "final-doc", "via": [[700, 589], [700, 517]] }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "流程铁律",
+      "items": [
+        "R1：各家独立审查，主持人必须并行投喂",
+        "Codex 与 Claude 互不可见 — 防止串供",
+        "主持人复核不可省 — 必对每家 R1 结论表态",
+        "Rk 隐含在账本迭代 + 主持人复核的循环中"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Rk ≠ 复述",
+      "items": [
+        "不要把 N 轮实现成「出报告 → 确认 → 再审一遍」",
+        "那只是单审方重复 N 次，不是多方讨论",
+        "缺了「对方异议」这一块，就不是交叉质询",
+        "每轮 brief 必须含「对方异议 + 主持人裁决」"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "成本与中断",
+      "items": [
+        "--max-budget-usd 是防跑飞闸门，建议 40 或省略",
+        "本机记账是虚拟账单，真实扣费另算",
+        "双审核方同源必须声明（写进 REVIEW 元信息）",
+        "预算耗尽时把现状写进终稿，不留半拉子"
+      ]
+    }
+  ]
+}

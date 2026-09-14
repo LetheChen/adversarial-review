@@ -40,3 +40,7 @@ _claude_*
 *.jsonl
 # 截图/附件（体积）
 *.png.tmp
+# archify visual-check 临时副产物（PNG/JSON/HTML sidecars）
+*.visual-check.*.png
+*.visual-check.html
+*.visual-check.json
