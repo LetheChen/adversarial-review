@@ -1,0 +1,42 @@
+# ============================================
+# adversarial-review-panel .gitignore
+# 最小集：系统垃圾 + IDE + skill 运行期临时产物
+# ============================================
+
+# === 系统/平台垃圾 ===
+.DS_Store
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# === IDE/编辑器 ===
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# === Python 运行期产物 ===
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# === Skill 运行期临时产物（不入库） ===
+# 投喂给 codex/claude 的 prompt 临时文件
+_R*-prompt-*.txt
+_R*-brief-*.txt
+# N 轮讨论进行中的工作账本
+_REVIEW-*-draft.md
+# 实测/烟测产物
+smoke.*
+*.smoke.json
+# codex/claude CLI 输出（隐私 + 体积）
+_codex_*
+_claude_*
+*.jsonl
+# 截图/附件（体积）
+*.png.tmp
