@@ -12,9 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking for installers**: the machine name changed from `adversarial-review-panel` to `adversarial-review` (`SKILL.md` frontmatter `name:`). Anyone who installed the old name must re-install; references to the old identifier will not resolve.
 - Repository renamed to `LetheChen/adversarial-review` — the old GitHub URL redirects.
 - The end-to-end diagram (`assets/business-process.html`) carries the new name in its title.
-
-### Removed
-- `业务流程图-对抗性复核.html` — the hand-written vertical swimlane is gone. Side by side, the archify sequence diagram reads better: the roles become columns and every arrow points the way the message actually flows. `assets/business-process.html` is now the single end-to-end diagram; the hand-written ①–⑮ step-by-step walkthrough survives only in git history.
+- **README is now Chinese-first**: title, summary and body read top-down in 中文, with the English version below. Both language sections link the same files.
+- The README leads with the end-to-end diagram as a full-width image (`assets/business-process.preview.png`), followed by links to both diagrams — the archify sequence view and the hand-written step-by-step view. Both are kept: the sequence diagram answers "who sends what to whom", the hand-written one answers "which of the 15 steps is this, and when do we stop".
+- `assets/business-process.preview.png` re-captured from the rendered diagram so the header reads large and the 4th explanatory card drops out of frame.
 
 ## [1.1.2] - 2026-10-16
 

@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>对抗性复核 · 端到端业务流程图</title>
+<style>
+  :root{
+    --bg:#020617; --card:#0f172a; --card2:#111c33; --grid:#1e293b;
+    --text:#e2e8f0; --muted:#94a3b8; --dim:#64748b;
+    --line:#334155; --arrow:#7c8ba1;
+    --flow:#22d3ee; --decide:#fbbf24; --actor:#34d399; --host:#60a5fa;
+    --exec:#a78bfa; --warn:#fb7185; --note:#94a3b8;
+  }
+  html[data-theme="light"]{
+    --bg:#f8fafc; --card:#ffffff; --card2:#f1f5f9; --grid:#e2e8f0;
+    --text:#0f172a; --muted:#475569; --dim:#94a3b8;
+    --line:#cbd5e1; --arrow:#64748b;
+    --flow:#0891b2; --decide:#b45309; --actor:#047857; --host:#1d4ed8;
+    --exec:#7c3aed; --warn:#be123c; --note:#64748b;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:"Microsoft YaHei","PingFang SC","Noto Sans SC","JetBrains Mono",ui-monospace,monospace;
+  }
+  .wrap{max-width:1460px;margin:0 auto;padding:28px 20px 60px}
+  header{display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px;margin-bottom:6px}
+  h1{font-size:22px;margin:0;letter-spacing:.5px}
+  .sub{color:var(--muted);font-size:13px;margin:4px 0 0}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;margin:16px 0 4px;font-size:12.5px;color:var(--muted)}
+  .chip{display:inline-flex;align-items:center;gap:6px}
+  .dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+  button{margin-left:auto;background:var(--card2);color:var(--text);border:1px solid var(--line);
+    border-radius:8px;padding:7px 14px;font:inherit;font-size:12.5px;cursor:pointer}
+  button:hover{border-color:var(--arrow)}
+  svg{width:100%;height:auto;display:block;margin-top:10px}
+  text{font-family:inherit}
+  .box{fill:var(--card);stroke-width:1.6}
+  .t1{font-size:15px;font-weight:700;fill:var(--text)}
+  .t2{font-size:12.5px;fill:var(--muted)}
+  .t3{font-size:11.5px;fill:var(--dim)}
+  .dt1{font-size:14px;font-weight:700;fill:var(--text)}
+  .dt2{font-size:12px;fill:var(--muted)}
+  .lbl{font-size:12px;fill:var(--muted)}
+  .stage{font-size:12px;letter-spacing:2px;fill:var(--dim)}
+  .edge{stroke:var(--arrow);stroke-width:1.6;fill:none}
+  .edge-dash{stroke:var(--dim);stroke-width:1.4;fill:none;stroke-dasharray:5 4}
+  .edge-loop{stroke:var(--decide);stroke-width:1.8;fill:none}
+  .rule{stroke:var(--grid);stroke-width:1;stroke-dasharray:3 5}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <h1>对抗性复核 · 端到端业务流程图</h1>
+    <p class="sub">触发路由 → 执行层选型 → R1 独立取证 → 交叉质询 → 可计算收敛 → 交付收尾（依据 SKILL.md §1–§7）</p>
+  </div>
+  <button onclick="var h=document.documentElement;h.dataset.theme=h.dataset.theme==='dark'?'light':'dark'">切换主题</button>
+</header>
+
+<div class="legend">
+  <span class="chip"><i class="dot" style="background:var(--flow)"></i>流程步骤</span>
+  <span class="chip"><i class="dot" style="background:var(--decide)"></i>决策 / 循环</span>
+  <span class="chip"><i class="dot" style="background:var(--actor)"></i>审查者（红队）</span>
+  <span class="chip"><i class="dot" style="background:var(--host)"></i>主持人</span>
+  <span class="chip"><i class="dot" style="background:var(--exec)"></i>执行层 / 外部通道</span>
+  <span class="chip"><i class="dot" style="background:var(--warn)"></i>红线 / 止损</span>
+  <span class="chip"><i class="dot" style="background:var(--dim)"></i>校验与旁注（虚线）</span>
+</div>
+
+<svg viewBox="0 0 1400 2540" role="img" aria-label="对抗性复核端到端业务流程图">
+<defs>
+  <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+    <path d="M40 0H0V40" fill="none" stroke="var(--grid)" stroke-width="0.5" opacity=".55"/>
+  </pattern>
+  <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0 0 L10 5 L0 10 z" fill="var(--arrow)"/>
+  </marker>
+  <marker id="ahd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0 0 L10 5 L0 10 z" fill="var(--dim)"/>
+  </marker>
+  <marker id="ahl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0 0 L10 5 L0 10 z" fill="var(--decide)"/>
+  </marker>
+  <marker id="ahr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0 0 L10 5 L0 10 z" fill="var(--warn)"/>
+  </marker>
+</defs>
+<rect x="0" y="0" width="1400" height="2540" fill="url(#grid)"/>
+
+<!-- 阶段标签 -->
+<text class="stage" transform="translate(26,385) rotate(-90)">阶段 A · 触发与路由</text>
+<text class="stage" transform="translate(26,895) rotate(-90)">阶段 B · 执行层准备</text>
+<text class="stage" transform="translate(26,1175) rotate(-90)">阶段 C · R1 独立审查</text>
+<text class="stage" transform="translate(26,1590) rotate(-90)">阶段 D · 复核与收敛</text>
+<text class="stage" transform="translate(26,2215) rotate(-90)">阶段 E · 交付与收尾</text>
+<line class="rule" x1="44" y1="740" x2="1360" y2="740"/>
+<line class="rule" x1="44" y1="1040" x2="1360" y2="1040"/>
+<line class="rule" x1="44" y1="1300" x2="1360" y2="1300"/>
+<line class="rule" x1="44" y1="1880" x2="1360" y2="1880"/>
+
+<!-- 1 起点 -->
+<rect class="box" x="490" y="60" width="360" height="56" rx="28" fill="var(--card2)" stroke="var(--actor)"/>
+<text class="t1" x="670" y="94" text-anchor="middle">① 用户提出审查需求</text>
+<path class="edge" d="M670 116 V146" marker-end="url(#ah)"/>
+
+<!-- 2 决策 D1 -->
+<path d="M670 146 L910 211 L670 276 L430 211 Z" class="box" fill="var(--card2)" stroke="var(--decide)"/>
+<text class="dt1" x="670" y="205" text-anchor="middle">用户点名外部 harness</text>
+<text class="dt2" x="670" y="229" text-anchor="middle">或要求跨模型家族？</text>
+
+<!-- 分支总线 -->
+<path class="edge" d="M670 276 V300"/>
+<path class="edge" d="M380 300 H960"/>
+<path class="edge" d="M380 300 V320" marker-end="url(#ah)"/>
+<path class="edge" d="M960 300 V320" marker-end="url(#ah)"/>
+<text class="lbl" x="392" y="292">否（默认）</text>
+<text class="lbl" x="884" y="292">是</text>
+
+<!-- 3 执行层 -->
+<rect class="box" x="150" y="320" width="460" height="90" rx="10" stroke="var(--exec)"/>
+<text class="t1" x="380" y="350" text-anchor="middle" fill="var(--exec)">执行层 ① 原生 subagent</text>
+<text class="t2" x="380" y="374" text-anchor="middle">有子代理能力 &amp; 用户未点名 → 默认档</text>
+<text class="t3" x="380" y="394" text-anchor="middle">代价低，但无跨模型家族多样性</text>
+
+<rect class="box" x="730" y="320" width="460" height="90" rx="10" stroke="var(--exec)"/>
+<text class="t1" x="960" y="350" text-anchor="middle" fill="var(--exec)">执行层 ② CLI 子进程（外部通道）</text>
+<text class="t2" x="960" y="374" text-anchor="middle">claude -p / codex exec，进程+文件=最低公分母</text>
+<text class="t3" x="960" y="394" text-anchor="middle">沙箱 / 缓存 / 预算闸门更麻烦，通用性最高</text>
+
+<!-- 4 前置检查 -->
+<path class="edge" d="M380 410 V450" marker-end="url(#ah)"/>
+<path class="edge" d="M960 410 V450" marker-end="url(#ah)"/>
+<rect class="box" x="150" y="450" width="460" height="90" rx="10" stroke="var(--flow)"/>
+<text class="t1" x="380" y="480" text-anchor="middle">前置检查（native）</text>
+<text class="t2" x="380" y="504" text-anchor="middle">确认子代理能力，探明并发上限（实测 6）</text>
+<text class="t3" x="380" y="524" text-anchor="middle">无沙箱：只读只能写进 prompt → 每轮必校验工作区</text>
+
+<rect class="box" x="730" y="450" width="460" height="90" rx="10" stroke="var(--flow)"/>
+<text class="t1" x="960" y="480" text-anchor="middle">前置检查（CLI，30 秒）</text>
+<text class="t2" x="960" y="504" text-anchor="middle">which/version/provider + 冒烟测试</text>
+<text class="t3" x="960" y="524" text-anchor="middle">验三件事：通道通 / 中文不乱码 / 产物能落盘</text>
+
+<!-- 合并 -->
+<path class="edge" d="M380 540 V570"/>
+<path class="edge" d="M960 540 V570"/>
+<path class="edge" d="M380 570 H960"/>
+<path class="edge" d="M670 570 V620" marker-end="url(#ah)"/>
+
+<!-- 5 审查者与轮次路由 -->
+<rect class="box" x="430" y="620" width="480" height="90" rx="10" stroke="var(--actor)"/>
+<text class="t1" x="670" y="650" text-anchor="middle" fill="var(--actor)">② 按用户说法定「审查者组合 + 轮次 N」</text>
+<text class="t2" x="670" y="674" text-anchor="middle">默认 3 家 / 1 轮；「N 轮」才进交叉质询；N&gt;5 先提醒成本</text>
+<text class="t3" x="670" y="694" text-anchor="middle">未指定且说「独立复核」→ 3 家 + 1 轮</text>
+
+<rect class="box" x="950" y="620" width="340" height="110" rx="10" stroke="var(--exec)" stroke-dasharray="6 4"/>
+<text class="t1" x="1120" y="650" text-anchor="middle" fill="var(--exec)" font-size="14">③ 执行层 ④ 混用（高风险）</text>
+<text class="t2" x="1120" y="674" text-anchor="middle">架构决策 / 安全 / 对外承诺</text>
+<text class="t3" x="1120" y="694" text-anchor="middle">内轨 native 跑多轮</text>
+<text class="t3" x="1120" y="712" text-anchor="middle">外轨补一次独立 R1 + 终局确认</text>
+<path class="edge-dash" d="M910 665 H950" marker-end="url(#ahd)"/>
+<path class="edge-dash" d="M1120 730 V745 H670 V760" marker-end="url(#ahd)"/>
+
+<!-- 6 取证方法分派 -->
+<rect class="box" x="430" y="760" width="480" height="70" rx="10" stroke="var(--actor)"/>
+<text class="t1" x="670" y="790" text-anchor="middle">③ 分派互不重复的取证方法</text>
+<text class="t2" x="670" y="814" text-anchor="middle">多样性来自取证方法，不来自模型家族；不许两家同档</text>
+<path class="edge" d="M670 830 V855"/>
+<path class="edge" d="M225 855 H1065"/>
+<path class="edge" d="M225 855 V880" marker-end="url(#ah)"/>
+<path class="edge" d="M505 855 V880" marker-end="url(#ah)"/>
+<path class="edge" d="M785 855 V880" marker-end="url(#ah)"/>
+<path class="edge" d="M1065 855 V880" marker-end="url(#ah)"/>
+
+<!-- 7 四种取证方法 -->
+<rect class="box" x="100" y="880" width="250" height="110" rx="10" stroke="var(--actor)"/>
+<text class="t1" x="225" y="908" text-anchor="middle" font-size="14">S1 静态核验</text>
+<text class="t2" x="225" y="932" text-anchor="middle">只 Read/Grep</text>
+<text class="t3" x="225" y="952" text-anchor="middle">抓：行号幻觉</text>
+<text class="t3" x="225" y="972" text-anchor="middle">笔误、引用不一致</text>
+
+<rect class="box" x="380" y="880" width="250" height="110" rx="10" stroke="var(--actor)"/>
+<text class="t1" x="505" y="908" text-anchor="middle" font-size="14">S2 实测执行</text>
+<text class="t2" x="505" y="932" text-anchor="middle">跑命令 / 查 DB</text>
+<text class="t3" x="505" y="952" text-anchor="middle">抓：数字错</text>
+<text class="t3" x="505" y="972" text-anchor="middle">数据源不存在</text>
+
+<rect class="box" x="660" y="880" width="250" height="110" rx="10" stroke="var(--actor)"/>
+<text class="t1" x="785" y="908" text-anchor="middle" font-size="14">S3 反向重建</text>
+<text class="t2" x="785" y="932" text-anchor="middle">从结论倒推前提</text>
+<text class="t3" x="785" y="952" text-anchor="middle">抓：未检验前提</text>
+<text class="t3" x="785" y="972" text-anchor="middle">因果倒置</text>
+
+<rect class="box" x="940" y="880" width="250" height="110" rx="10" stroke="var(--actor)" stroke-dasharray="6 4"/>
+<text class="t1" x="1065" y="908" text-anchor="middle" font-size="14">S4 边界专项</text>
+<text class="t2" x="1065" y="932" text-anchor="middle">4 家时启用</text>
+<text class="t3" x="1065" y="952" text-anchor="middle">抓：失败路径</text>
+<text class="t3" x="1065" y="972" text-anchor="middle">权限、并发、回滚</text>
+
+<path class="edge" d="M225 990 V1020"/>
+<path class="edge" d="M505 990 V1020"/>
+<path class="edge" d="M785 990 V1020"/>
+<path class="edge" d="M1065 990 V1020"/>
+<path class="edge" d="M225 1020 H1065"/>
+<path class="edge" d="M670 1020 V1060" marker-end="url(#ah)"/>
+
+<!-- 8 R1 并行 -->
+<rect class="box" x="430" y="1060" width="480" height="90" rx="10" stroke="var(--actor)"/>
+<text class="t1" x="670" y="1090" text-anchor="middle" fill="var(--actor)">④ R1：各家并行独立审查（互不可见）</text>
+<text class="t2" x="670" y="1114" text-anchor="middle">⛔ fork_context=false；禁读仓库内其他审查产物</text>
+<text class="t3" x="670" y="1134" text-anchor="middle">并行而非串行：价值来自「错误去相关」，串行会锚定</text>
+
+<!-- 9 立即落盘 -->
+<path class="edge" d="M670 1150 V1190" marker-end="url(#ah)"/>
+<rect class="box" x="430" y="1190" width="480" height="90" rx="10" stroke="var(--flow)"/>
+<text class="t1" x="670" y="1220" text-anchor="middle">⑤ 立即落盘 draft（硬要求）</text>
+<text class="t2" x="670" y="1244" text-anchor="middle">收到返回先写 REVIEW-…-draft.md，再做任何分析</text>
+<text class="t3" x="670" y="1264" text-anchor="middle">native 档无可靠会话续接 → 文件账本是唯一存活手段</text>
+
+<!-- 左侧校验（回环） -->
+<rect class="box" x="40" y="1190" width="360" height="100" rx="10" stroke="var(--warn)"/>
+<text class="t1" x="220" y="1220" text-anchor="middle" fill="var(--warn)" font-size="14">⑥ 工作区校验 git status</text>
+<text class="t2" x="220" y="1244" text-anchor="middle">被审文档出现改动 → 该轮作废</text>
+<text class="t3" x="220" y="1264" text-anchor="middle">查明来源后重跑该轮</text>
+<path class="edge-dash" d="M430 1230 H400" marker-end="url(#ahr)"/>
+<path class="edge-dash" d="M220 1190 V1130 H424" marker-end="url(#ahr)"/>
+
+<!-- 右侧收尾 -->
+<rect class="box" x="950" y="1190" width="340" height="100" rx="10" stroke="var(--dim)" stroke-dasharray="6 4"/>
+<text class="t1" x="1120" y="1220" text-anchor="middle" font-size="14" fill="var(--muted)">⑦ 执行层收尾</text>
+<text class="t2" x="1120" y="1244" text-anchor="middle">native：逐个关闭 agent，清点在途数</text>
+<text class="t3" x="1120" y="1264" text-anchor="middle">CLI：取 session id + 真实模型 + 记账</text>
+<path class="edge-dash" d="M910 1230 H950" marker-end="url(#ahd)"/>
+
+<!-- 10 主持人复核 -->
+<path class="edge" d="M670 1280 V1320" marker-end="url(#ah)"/>
+<rect class="box" x="430" y="1320" width="480" height="100" rx="10" stroke="var(--host)"/>
+<text class="t1" x="670" y="1350" text-anchor="middle" fill="var(--host)">⑧ 主持人独立复核（硬规矩，不可省）</text>
+<text class="t2" x="670" y="1374" text-anchor="middle">利益回避：驳回必须附亲手复验的一手证据</text>
+<text class="t3" x="670" y="1394" text-anchor="middle">拿不出证据 → 记「未裁决」，带进下一轮</text>
+<text class="t3" x="670" y="1412" text-anchor="middle">证据同位置重合 → 按单一证据处理</text>
+
+<!-- 11 账本 -->
+<path class="edge" d="M670 1420 V1460" marker-end="url(#ah)"/>
+<rect class="box" x="430" y="1460" width="480" height="70" rx="10" stroke="var(--flow)"/>
+<text class="t1" x="670" y="1490" text-anchor="middle">⑨ 逐轮计算账本</text>
+<text class="t2" x="670" y="1514" text-anchor="middle">R_t 未解决分歧 · E_t 新增证据 · C_t 撤回修正 · S_t 证据同源？ · K_t 已登记项</text>
+
+<!-- 12 收敛判定 -->
+<path class="edge" d="M670 1530 V1570" marker-end="url(#ah)"/>
+<path d="M670 1570 L910 1640 L670 1710 L430 1640 Z" class="box" fill="var(--card2)" stroke="var(--decide)"/>
+<text class="dt1" x="670" y="1634" text-anchor="middle">命中五条停机条件？</text>
+<text class="dt2" x="670" y="1658" text-anchor="middle">任一满足即停（不空转）</text>
+
+<!-- 左：停机条件清单 -->
+<rect class="box" x="40" y="1450" width="360" height="310" rx="10" stroke="var(--decide)"/>
+<text class="t1" x="220" y="1480" text-anchor="middle" fill="var(--decide)" font-size="14">停机条件</text>
+<text class="t2" x="60" y="1512">· R_t == 0 → 登记后结束</text>
+<text class="t3" x="72" y="1532">不得写成「全部一致 / 已收敛」</text>
+<text class="t2" x="60" y="1560">· E_t==0 且 R_t&gt;0，连续 2 轮</text>
+<text class="t3" x="72" y="1580">僵局 → 停止并升级（最省钱）</text>
+<text class="t2" x="60" y="1608">· S_t==是 且 R_t&gt;0</text>
+<text class="t3" x="72" y="1628">拒答，不是登记；主结论降档</text>
+<text class="t2" x="60" y="1656">· 2 条同级且矛盾的闭合链</text>
+<text class="t3" x="72" y="1676">对抗 → 转人工仲裁</text>
+<text class="t2" x="60" y="1704">· t ≥ N（兜底）</text>
+<text class="t3" x="72" y="1724">返回当前最优解，标记未收敛</text>
+<text class="t2" x="60" y="1750">提前收敛就提前停</text>
+<path class="edge" d="M430 1640 H400" marker-end="url(#ahl)"/>
+
+<!-- 右：交叉质询 + 循环 -->
+<rect class="box" x="950" y="1580" width="340" height="140" rx="10" stroke="var(--host)"/>
+<text class="t1" x="1120" y="1610" text-anchor="middle" fill="var(--host)" font-size="14">⑩ R(k+1) 交叉质询（并行）</text>
+<text class="t2" x="1120" y="1634" text-anchor="middle">① 对方异议（绝不能省）</text>
+<text class="t2" x="1120" y="1656" text-anchor="middle">② 我的裁决（只发被裁决方）</text>
+<text class="t2" x="1120" y="1678" text-anchor="middle">③ 待答问题（只问分歧点）</text>
+<text class="t3" x="1120" y="1700" text-anchor="middle">循环论证禁令：不得拿对方结论当证据</text>
+<path class="edge" d="M910 1640 H950" marker-end="url(#ah)"/>
+<text class="lbl" x="920" y="1628">否</text>
+<path class="edge-loop" d="M1290 1650 H1340 V1370 H916" marker-end="url(#ahl)"/>
+<text class="lbl" x="1180" y="1358" fill="var(--decide)">进入下一轮（k → k+1）</text>
+
+<!-- 13 结论强度定档 -->
+<path class="edge" d="M670 1710 V1760" marker-end="url(#ah)"/>
+<text class="lbl" x="682" y="1742">是</text>
+<rect class="box" x="430" y="1760" width="480" height="100" rx="10" stroke="var(--decide)"/>
+<text class="t1" x="670" y="1790" text-anchor="middle" fill="var(--decide)">⑪ 结论强度定档（L4–L0 分级）</text>
+<text class="t2" x="670" y="1814" text-anchor="middle">可执行：无未登记项 ｜ 仅供参考：有登记但主结论成立</text>
+<text class="t3" x="670" y="1834" text-anchor="middle">证据不足：关键主张落在 L1 或无法核验</text>
+<text class="t3" x="670" y="1852" text-anchor="middle">「已登记」≠「已解决」，不得为收口假装一致</text>
+
+<rect class="box" x="40" y="1790" width="360" height="90" rx="10" stroke="var(--warn)"/>
+<text class="t1" x="220" y="1820" text-anchor="middle" fill="var(--warn)" font-size="14">⛔ 止损分支：证据不足</text>
+<text class="t2" x="220" y="1844" text-anchor="middle">只输出「还需要什么证据才能判定」</text>
+<text class="t3" x="220" y="1864" text-anchor="middle">禁止直接进批量改文档</text>
+<path class="edge-dash" d="M430 1830 H400" marker-end="url(#ahr)"/>
+
+<!-- 14 REVIEW 文档 -->
+<path class="edge" d="M670 1860 V1940" marker-end="url(#ah)"/>
+<rect class="box" x="430" y="1940" width="480" height="100" rx="10" stroke="var(--flow)"/>
+<text class="t1" x="670" y="1970" text-anchor="middle">⑫ 产出 REVIEW-&lt;主题&gt;-&lt;日期&gt;.md</text>
+<text class="t2" x="670" y="1994" text-anchor="middle">复核表 + 讨论轮次账本 + 各方报告关键段落原文</text>
+<text class="t3" x="670" y="2014" text-anchor="middle">最终分歧记录（谁持什么立场、为何没判定）</text>
+<text class="t3" x="670" y="2032" text-anchor="middle">头部：session id / 真实模型 / 成本 / 同源声明</text>
+
+<!-- 15 修订 + 回读 + 清理 -->
+<path class="edge" d="M670 2040 V2080" marker-end="url(#ah)"/>
+<rect class="box" x="430" y="2080" width="480" height="80" rx="10" stroke="var(--flow)"/>
+<text class="t1" x="670" y="2110" text-anchor="middle">⑬ 按处置清单真的去改被审文档</text>
+<text class="t2" x="670" y="2134" text-anchor="middle">位置 ｜ 原表述 ｜ 修订为 ｜ 来源（谁提的、证据等级）</text>
+<text class="t3" x="670" y="2152" text-anchor="middle">只出报告不改，等于没审</text>
+
+<rect class="box" x="950" y="2080" width="340" height="80" rx="10" stroke="var(--dim)" stroke-dasharray="6 4"/>
+<text class="t1" x="1120" y="2110" text-anchor="middle" font-size="14" fill="var(--muted)">成本记账（§7）</text>
+<text class="t2" x="1120" y="2134" text-anchor="middle">每轮记 token / 耗时 / 真实扣费</text>
+<text class="t3" x="1120" y="2152" text-anchor="middle">R2+ 走增量投递 / resume</text>
+<path class="edge-dash" d="M910 2110 H950" marker-end="url(#ahd)"/>
+
+<path class="edge" d="M670 2160 V2200" marker-end="url(#ah)"/>
+<rect class="box" x="430" y="2200" width="480" height="80" rx="10" stroke="var(--warn)"/>
+<text class="t1" x="670" y="2230" text-anchor="middle" fill="var(--warn)">⑭ 回读验证（铁律）</text>
+<text class="t2" x="670" y="2254" text-anchor="middle">grep 关键词 → 输出「已落地 / 未落地」表</text>
+<text class="t3" x="670" y="2272" text-anchor="middle">只信编辑回执会被打脸；未落地就重做，直到全部命中</text>
+
+<path class="edge" d="M670 2280 V2320" marker-end="url(#ah)"/>
+<rect class="box" x="430" y="2320" width="480" height="70" rx="10" stroke="var(--flow)"/>
+<text class="t1" x="670" y="2350" text-anchor="middle">⑮ 清理临时产物与临时文件</text>
+<text class="t2" x="670" y="2374" text-anchor="middle">先确认报告与台账已归档进 REVIEW 文档</text>
+
+<path class="edge" d="M670 2390 V2430" marker-end="url(#ah)"/>
+<rect class="box" x="450" y="2430" width="440" height="70" rx="35" fill="var(--card2)" stroke="var(--actor)"/>
+<text class="t1" x="670" y="2462" text-anchor="middle" fill="var(--actor)">向用户汇报：分清三类结论</text>
+<text class="t2" x="670" y="2486" text-anchor="middle">我说错的 ｜ 审查者说错的 ｜ 仍未收敛的</text>
+</svg>
+</div>
+</body>
+</html>

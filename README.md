@@ -1,8 +1,8 @@
-# Adversarial Review · 对抗性复核
-
-> Send analysis / proposals / code changes to **independent reviewer perspectives** for adversarial (red-team) review — single-reviewer, multi-perspective, or N-round cross-examination until convergence. Uses **native subagents by default** (2–4 reviewers with *different evidence-gathering methods*), and falls back to **CLI subprocesses** (Claude Code / Codex CLI) for cross-harness or cross-model-family work. Produces a `REVIEW-` document.
+# 对抗性复核 · Adversarial Review
 
 > 把分析文档 / 方案 / 代码改动交给**多个独立审查视角**做对抗性审查（红队复核）—— 单审查者、多视角并行、N 轮交叉质询与可计算的收敛判定。**默认用原生 subagent**（2–4 家，**取证方法互不相同**），跨 harness / 需要跨模型家族时走 **CLI 子进程外部通道**（Claude Code / Codex CLI）。产出 `REVIEW-` 文档。
+
+> Send analysis / proposals / code changes to **independent reviewer perspectives** for adversarial (red-team) review — single-reviewer, multi-perspective, or N-round cross-examination until convergence. Uses **native subagents by default** (2–4 reviewers with *different evidence-gathering methods*), and falls back to **CLI subprocesses** (Claude Code / Codex CLI) for cross-harness or cross-model-family work. Produces a `REVIEW-` document.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](CHANGELOG.md)
@@ -10,76 +10,16 @@
 
 ---
 
-## English
+## 端到端流程图
 
-### What is this?
+![对抗性复核 · 端到端业务流程](assets/business-process.preview.png)
 
-A **Codex / Claude Code / Cursor skill** that turns "review this" into a structured adversarial review. Instead of trusting the model that wrote the doc, the skill dispatches the work to 2–4 **independent reviewer perspectives**, enforces file-based accounting, and supports N-round cross-examination until disagreements are resolved.
+六个角色竖排成列、时间自上而下：用户 → 主持人 → 执行层 → 审查者池 → 文件账本 → 收敛判定。
 
-**Three core principles:**
-1. **The file is the ledger (authoritative), the session is the accelerator.**
-2. **Artifacts are the contract, the execution layer is pluggable** — native subagents by default, CLI subprocesses as fallback, mixable.
-3. **Diversity comes from evidence-gathering methods, not from model families.**
+- **交互版**（可点击、可切主题与分阶段引导）：[`assets/business-process.html`](assets/business-process.html)
+- **手写竖版**（①–⑮ 工序视角，含停机条件与回读验证）：[`业务流程图-对抗性复核.html`](业务流程图-对抗性复核.html)
 
-### Why?
-
-Because the model that wrote the document is the model most likely to **defend** it. And because "I asked another LLM and it agreed" is not actually a review. This skill forces:
-
-- A **different** reviewer perspective — and a **different evidence-gathering method** per reviewer (static check / live execution / reverse-premise attack / edge-case hunt), so reviewers miss *different* things rather than converging on the same blind spot.
-- **Independent** verification (the reviewer must open the file, not paraphrase it).
-- **Accountability** (every claim is anchored to `file:line` + raw evidence + an evidence grade L4–L0).
-- **Convergence** (N-round debate with explicit "maintain / revise / withdraw" on each contested point, stopped by *four computable metrics*, not by feel).
-
-### What can it review?
-
-Anything that lives in a git repository as a document or diff:
-
-- Analysis reports / design docs / proposals
-- Schema migrations / refactor plans
-- Code changes (PR-equivalent)
-- Cross-team business designs
-
-### Quick start
-
-This is a **skill** — install it under your Claude Code or Cursor skills directory, then trigger it with phrases like:
-
-| Phrase | What happens |
-|---|---|
-| "Have Claude review this" | External channel: Claude Code CLI, 1 round |
-| "Have Codex review this" | External channel: Codex CLI, 1 round |
-| "Send to team review" | Claude + Codex — cross-model-family diversity |
-| "Spawn a few subagents to review this" | **Default** — 3 native subagents, 3 different methods, 1 round |
-| "Mixed review (both subagents and cross-family)" | Native reviewers (N rounds) + 1 external-channel round |
-| "Team review for 3 rounds" | R1 independent + 2 rounds of cross-examination |
-| "Red-team this analysis" | Same as default multi-perspective review (alias) |
-
-### File map
-
-| When you need | Read this |
-|---|---|
-| The full methodology, decision rules, execution steps | [`SKILL.md`](SKILL.md) |
-| R1 red-team prompt, Rk cross-exam brief, the **evidence-gathering method catalog (S1–S4)**, and the abort-round audit checklist | [`assets/prompts.md`](assets/prompts.md) |
-| Every pitfall — CLI channel **and** native subagent (concurrency, `fork_context`, cleanup) | [`references/pitfalls.md`](references/pitfalls.md) |
-| Extract session/thread IDs, detect same-source model, compute cost | [`scripts/extract_session_ids.py`](scripts/extract_session_ids.py) |
-| The end-to-end process as an interactive diagram (roles as columns, time downward) | [`assets/business-process.html`](assets/business-process.html) · [`preview`](assets/business-process.preview.png) |
-
-### Requirements
-
-- **For the default (native subagent) path**: a harness that provides a subagent / sub-task capability. No CLI required.
-- **For the external-channel path**: a local install of [Claude Code CLI](https://docs.claude.com/en/docs/claude-code) **and/or** [OpenAI Codex CLI](https://github.com/openai/codex), runnable in the target repository's working directory.
-- Python 3.8+ (only for the session-id extractor script, external channel only).
-
-### License
-
-[MIT](LICENSE) — Copyright (c) 2026 LetheChen &lt;lethe@chen.com&gt;.
-
-### Contributing
-
-See [`CONTRIBUTING.md`](CONTRIBUTING.md). Bug reports, new prompt templates, and worked examples are especially welcome.
-
-### Security
-
-See [`SECURITY.md`](SECURITY.md) — please report vulnerabilities privately, not via public issues.
+> The end-to-end process, with the six roles as columns and time running downward: [interactive](assets/business-process.html) · [hand-written step-by-step variant](业务流程图-对抗性复核.html).
 
 ---
 
@@ -135,6 +75,7 @@ See [`SECURITY.md`](SECURITY.md) — please report vulnerabilities privately, no
 | 全部坑点 —— CLI 通道**与**原生 subagent（并发上限、`fork_context`、收尾清理） | [`references/pitfalls.md`](references/pitfalls.md) |
 | 提取 session/thread id、检测同源模型、算账 | [`scripts/extract_session_ids.py`](scripts/extract_session_ids.py) |
 | 端到端流程交互图（角色竖排成列、时间自上而下） | [`assets/business-process.html`](assets/business-process.html) · [`预览图`](assets/business-process.preview.png) |
+| 工序流程图（①–⑮ 逐步骤，含停机条件与回读验证，手写竖版） | [`业务流程图-对抗性复核.html`](业务流程图-对抗性复核.html) |
 
 ### 依赖
 
@@ -153,6 +94,80 @@ See [`SECURITY.md`](SECURITY.md) — please report vulnerabilities privately, no
 ### 安全
 
 见 [`SECURITY.md`](SECURITY.md) —— 漏洞请私下报告，不要在公开 issue 里发。
+
+---
+
+## English
+
+### What is this?
+
+A **Codex / Claude Code / Cursor skill** that turns "review this" into a structured adversarial review. Instead of trusting the model that wrote the doc, the skill dispatches the work to 2–4 **independent reviewer perspectives**, enforces file-based accounting, and supports N-round cross-examination until disagreements are resolved.
+
+**Three core principles:**
+1. **The file is the ledger (authoritative), the session is the accelerator.**
+2. **Artifacts are the contract, the execution layer is pluggable** — native subagents by default, CLI subprocesses as fallback, mixable.
+3. **Diversity comes from evidence-gathering methods, not from model families.**
+
+### Why?
+
+Because the model that wrote the document is the model most likely to **defend** it. And because "I asked another LLM and it agreed" is not actually a review. This skill forces:
+
+- A **different** reviewer perspective — and a **different evidence-gathering method** per reviewer (static check / live execution / reverse-premise attack / edge-case hunt), so reviewers miss *different* things rather than converging on the same blind spot.
+- **Independent** verification (the reviewer must open the file, not paraphrase it).
+- **Accountability** (every claim is anchored to `file:line` + raw evidence + an evidence grade L4–L0).
+- **Convergence** (N-round debate with explicit "maintain / revise / withdraw" on each contested point, stopped by *four computable metrics*, not by feel).
+
+### What can it review?
+
+Anything that lives in a git repository as a document or diff:
+
+- Analysis reports / design docs / proposals
+- Schema migrations / refactor plans
+- Code changes (PR-equivalent)
+- Cross-team business designs
+
+### Quick start
+
+This is a **skill** — install it under your Claude Code or Cursor skills directory, then trigger it with phrases like:
+
+| Phrase | What happens |
+|---|---|
+| "Have Claude review this" | External channel: Claude Code CLI, 1 round |
+| "Have Codex review this" | External channel: Codex CLI, 1 round |
+| "Send to team review" | Claude + Codex — cross-model-family diversity |
+| "Spawn a few subagents to review this" | **Default** — 3 native subagents, 3 different methods, 1 round |
+| "Mixed review (both subagents and cross-family)" | Native reviewers (N rounds) + 1 external-channel round |
+| "Team review for 3 rounds" | R1 independent + 2 rounds of cross-examination |
+| "Red-team this analysis" | Same as default multi-perspective review (alias) |
+
+### File map
+
+| When you need | Read this |
+|---|---|
+| The full methodology, decision rules, execution steps | [`SKILL.md`](SKILL.md) |
+| R1 red-team prompt, Rk cross-exam brief, the **evidence-gathering method catalog (S1–S4)**, and the abort-round audit checklist | [`assets/prompts.md`](assets/prompts.md) |
+| Every pitfall — CLI channel **and** native subagent (concurrency, `fork_context`, cleanup) | [`references/pitfalls.md`](references/pitfalls.md) |
+| Extract session/thread IDs, detect same-source model, compute cost | [`scripts/extract_session_ids.py`](scripts/extract_session_ids.py) |
+| The end-to-end process as an interactive diagram (roles as columns, time downward) | [`assets/business-process.html`](assets/business-process.html) · [`preview`](assets/business-process.preview.png) |
+| The hand-written step-by-step walkthrough (steps ①–⑮, abort conditions, read-back verification) | [`业务流程图-对抗性复核.html`](业务流程图-对抗性复核.html) |
+
+### Requirements
+
+- **For the default (native subagent) path**: a harness that provides a subagent / sub-task capability. No CLI required.
+- **For the external-channel path**: a local install of [Claude Code CLI](https://docs.claude.com/en/docs/claude-code) **and/or** [OpenAI Codex CLI](https://github.com/openai/codex), runnable in the target repository's working directory.
+- Python 3.8+ (only for the session-id extractor script, external channel only).
+
+### License
+
+[MIT](LICENSE) — Copyright (c) 2026 LetheChen &lt;lethe@chen.com&gt;.
+
+### Contributing
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md). Bug reports, new prompt templates, and worked examples are especially welcome.
+
+### Security
+
+See [`SECURITY.md`](SECURITY.md) — please report vulnerabilities privately, not via public issues.
 
 ---
 
