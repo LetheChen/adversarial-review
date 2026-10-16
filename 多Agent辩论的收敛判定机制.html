@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>多 Agent 辩论的收敛判定机制 · 知识文档</title>
+<style>
+:root{
+  --bg:#fbfaf7; --paper:#ffffff; --ink:#1a1d23; --ink2:#4a5160; --ink3:#8a90a0;
+  --rule:#e6e3dc; --rule2:#d5d1c8;
+  --acc:#8a5a00; --acc-bg:#fdf4e0;
+  --blue:#1d5fa8; --blue-bg:#eaf2fb;
+  --green:#1a7a4a; --green-bg:#e8f6ee;
+  --red:#b8322a;   --red-bg:#fceceb;
+  --violet:#6b3fa0; --violet-bg:#f2ecfa;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+}
+[data-theme="dark"]{
+  --bg:#0d1017; --paper:#141926; --ink:#e8ecf4; --ink2:#a8b2c6; --ink3:#6f7a92;
+  --rule:#242c3d; --rule2:#323c54;
+  --acc:#e8b43c; --acc-bg:#2a2113;
+  --blue:#6aa9ee; --blue-bg:#152234;
+  --green:#5fc98d; --green-bg:#12251b;
+  --red:#ef7a70;  --red-bg:#2b1716;
+  --violet:#a98ad9; --violet-bg:#201a2e;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB","Noto Sans SC",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:16px; line-height:1.9; -webkit-font-smoothing:antialiased;
+}
+.layout{display:grid;grid-template-columns:270px minmax(0,1fr);max-width:1360px;margin:0 auto}
+aside{
+  position:sticky;top:0;height:100vh;overflow-y:auto;padding:28px 20px 50px;
+  border-right:1px solid var(--rule);background:var(--paper);
+}
+aside .brand{font-size:11px;letter-spacing:.16em;color:var(--ink3);text-transform:uppercase;margin-bottom:6px}
+aside .name{font-size:14.5px;font-weight:700;line-height:1.5;margin-bottom:24px}
+aside nav a{
+  display:block;padding:7px 12px;margin:1px 0;border-radius:8px;border-left:2px solid transparent;
+  color:var(--ink2);text-decoration:none;font-size:13.5px;transition:.14s;
+}
+aside nav a:hover{background:var(--bg);color:var(--ink);border-left-color:var(--acc)}
+aside nav a.l2{padding-left:26px;font-size:12.5px;color:var(--ink3)}
+aside .rule{height:1px;background:var(--rule);margin:20px 0}
+aside .tt{font-size:11px;letter-spacing:.14em;color:var(--ink3);text-transform:uppercase;margin-bottom:10px}
+main{min-width:0;padding-bottom:90px}
+.hero{padding:58px 52px 40px;border-bottom:1px solid var(--rule);background:var(--paper)}
+.eyebrow{display:inline-block;font-size:11.5px;letter-spacing:.13em;color:var(--bg);background:var(--acc);
+  padding:4px 11px;border-radius:999px;font-weight:700}
+h1{margin:18px 0 14px;font-size:33px;line-height:1.35;letter-spacing:-.015em}
+.lede{color:var(--ink2);font-size:16.5px;max-width:66ch;margin:0 0 8px}
+.hero .src{margin-top:24px;padding-top:18px;border-top:1px dashed var(--rule2);font-size:13px;color:var(--ink3)}
+section{padding:44px 52px;border-bottom:1px solid var(--rule)}
+h2{margin:0 0 6px;font-size:22px;letter-spacing:-.01em}
+h2 .num{display:inline-block;font-size:11.5px;font-weight:700;color:var(--bg);background:var(--ink);
+  padding:2px 9px;border-radius:6px;margin-right:11px;vertical-align:3px}
+.lead{color:var(--ink2);font-size:15px;margin:0 0 26px;max-width:74ch}
+h3{font-size:17px;margin:32px 0 10px;padding-left:13px;border-left:3px solid var(--acc)}
+h4{font-size:15px;margin:22px 0 8px;color:var(--ink)}
+p{margin:11px 0}
+ul,ol{padding-left:23px;margin:11px 0}
+li{margin:6px 0}
+strong{font-weight:650}
+code{font-family:var(--mono);font-size:.885em;background:var(--bg);padding:2px 6px;border-radius:5px;
+  border:1px solid var(--rule);color:var(--acc)}
+pre{background:var(--paper);border:1px solid var(--rule);border-left:3px solid var(--acc);
+  border-radius:10px;padding:16px 18px;overflow-x:auto;margin:16px 0}
+pre code{background:none;border:none;padding:0;color:var(--ink);font-size:13px;line-height:1.75}
+.box{border-radius:11px;padding:15px 19px;margin:18px 0;font-size:14.5px;border:1px solid}
+.box p{margin:5px 0}
+.box .lb{font-size:11.5px;letter-spacing:.11em;text-transform:uppercase;font-weight:700;margin-bottom:6px;display:block}
+.box.key{background:var(--acc-bg);border-color:color-mix(in srgb,var(--acc) 34%,transparent)}
+.box.key .lb{color:var(--acc)}
+.box.warn{background:var(--red-bg);border-color:color-mix(in srgb,var(--red) 34%,transparent)}
+.box.warn .lb{color:var(--red)}
+.box.note{background:var(--blue-bg);border-color:color-mix(in srgb,var(--blue) 30%,transparent)}
+.box.note .lb{color:var(--blue)}
+.box.tip{background:var(--green-bg);border-color:color-mix(in srgb,var(--green) 30%,transparent)}
+.box.tip .lb{color:var(--green)}
+table{width:100%;border-collapse:collapse;margin:18px 0;font-size:14px;
+  border:1px solid var(--rule);border-radius:11px;overflow:hidden}
+th,td{text-align:left;padding:11px 15px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{background:var(--bg);color:var(--ink3);font-weight:650;font-size:12px;letter-spacing:.05em;text-transform:uppercase}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--bg)}
+.pill{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:999px;font-weight:650}
+.pill.g{background:var(--green-bg);color:var(--green)}
+.pill.r{background:var(--red-bg);color:var(--red)}
+.pill.b{background:var(--blue-bg);color:var(--blue)}
+.pill.v{background:var(--violet-bg);color:var(--violet)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(272px,1fr));gap:15px;margin:22px 0}
+.card{background:var(--paper);border:1px solid var(--rule);border-radius:13px;padding:19px 21px}
+.card h5{margin:0 0 10px;font-size:14.5px}
+.card p{font-size:14px;color:var(--ink2);margin:6px 0}
+.card ul{font-size:14px;color:var(--ink2);padding-left:20px;margin:6px 0}
+.card.g{border-left:3px solid var(--green)}
+.card.r{border-left:3px solid var(--red)}
+.card.b{border-left:3px solid var(--blue)}
+.formula{background:var(--paper);border:1px solid var(--rule2);border-radius:14px;padding:26px;margin:24px 0;text-align:center}
+.formula .lb{font-size:11px;letter-spacing:.14em;color:var(--ink3);text-transform:uppercase}
+.formula .eq{margin-top:14px;font-size:22px;font-weight:700;line-height:1.6}
+.formula .eq .a{color:var(--green)} .formula .eq .b{color:var(--blue)}
+.formula .eq .c{color:var(--violet)} .formula .eq .x{color:var(--ink3);margin:0 8px}
+figure{margin:24px 0;background:var(--paper);border:1px solid var(--rule);border-radius:14px;padding:22px;overflow-x:auto}
+figure svg{display:block;width:100%;height:auto;min-width:620px}
+figcaption{font-size:13px;color:var(--ink3);text-align:center;margin-top:14px;padding-top:12px;border-top:1px dashed var(--rule2)}
+.svg-t{font:600 14px/1.4 "PingFang SC","Microsoft YaHei",sans-serif;fill:var(--ink)}
+.svg-s{font:400 12px/1.4 "PingFang SC","Microsoft YaHei",sans-serif;fill:var(--ink3)}
+.svg-b{font:700 13px/1.4 "PingFang SC","Microsoft YaHei",sans-serif}
+.chk{list-style:none;padding:0;margin:16px 0}
+.chk li{padding:12px 16px;border:1px solid var(--rule);border-radius:10px;margin:8px 0;background:var(--paper);font-size:14.5px}
+.chk.yes li::before{content:"\2713";color:var(--green);font-weight:700;margin-right:11px}
+.chk li b{display:inline-block;min-width:11em}
+.tagrow{display:flex;flex-wrap:wrap;gap:7px;margin:14px 0}
+.tag{font-size:12.5px;padding:4px 11px;border-radius:999px;background:var(--bg);
+  border:1px solid var(--rule2);color:var(--ink2)}
+.tag.b{background:var(--blue-bg);border-color:color-mix(in srgb,var(--blue) 30%,transparent);color:var(--blue)}
+.toggle{position:fixed;top:16px;right:18px;z-index:99;font-size:12.5px;padding:7px 13px;border-radius:999px;
+  border:1px solid var(--rule2);background:var(--paper);color:var(--ink2);cursor:pointer;font-family:inherit}
+.toggle:hover{color:var(--ink);border-color:var(--ink3)}
+footer{padding:32px 52px;color:var(--ink3);font-size:13px}
+@media (max-width:940px){
+  .layout{grid-template-columns:1fr}
+  aside{display:none}
+  section,.hero,footer{padding-left:20px;padding-right:20px}
+  h1{font-size:25px}
+}
+</style>
+</head>
+<body>
+<button class="toggle" onclick="var r=document.documentElement;r.setAttribute('data-theme',r.getAttribute('data-theme')==='dark'?'light':'dark')">&#9681; 深浅切换</button>
+<div class="layout">
+<aside>
+  <div class="brand">Knowledge Note</div>
+  <div class="name">多 Agent 辩论的<br>收敛判定机制</div>
+  <nav>
+    <a href="#s1">1 &middot; 问题定义</a>
+    <a href="#s2">2 &middot; 为什么默认会失效</a>
+    <a href="#s3">3 &middot; 机制一：独立性校验</a>
+    <a href="#s4">4 &middot; 机制二：信息不对称</a>
+    <a href="#s5">5 &middot; 机制三：证据链收敛</a>
+    <a href="#s6">6 &middot; 评估与度量</a>
+    <a href="#s7">7 &middot; 反模式清单</a>
+    <a href="#s8">8 &middot; 概念地图</a>
+  </nav>
+  <div class="rule"></div>
+  <div class="tt">阅读顺序</div>
+  <nav>
+    <a href="#s2" class="l2">先理解失效模式</a>
+    <a href="#s3" class="l2">再看三个解法</a>
+    <a href="#s7" class="l2">最后自查工程实现</a>
+  </nav>
+</aside>
+<main>
+<div class="hero">
+  <span class="eyebrow">Knowledge Document</span>
+  <h1>多 Agent 辩论的收敛判定机制</h1>
+  <p class="lede">
+    一句话问题：<strong>让多个 LLM Agent 互相辩论、投票，能不能得到正确答案？</strong>
+    这篇文档系统回答它，并给出可以直接落地的判定与收敛设计。
+  </p>
+  <div class="src">
+    主题来自抖音技术科普视频《三个 Agent 辩论几轮就能定对错？这道题 90% 的人答不上来》（作者：先先贝ᴗ.）。
+    本文档为<strong>知识点整理与扩写</strong>，非视频转录；示例代码、评估指标与反模式清单为补充推导。
+  </div>
+</div>
+<section id="s1">
+  <h2><span class="num">1</span>问题定义</h2>
+  <p class="lead">先把"辩论"和"收敛"两个词定义清楚，后面才不会各说各话。</p>
+  <h3>1.1 什么是多 Agent 辩论</h3>
+  <p>把同一个任务分给 <code>N</code> 个 Agent 实例，各自独立求解，然后互相看到对方的推理过程并修改自己的结论，反复若干轮后产出最终答案。常见变体：</p>
+  <div class="tagrow">
+    <span class="tag b">自由辩论 free debate</span>
+    <span class="tag b">辩论-投票 debate &amp; vote</span>
+    <span class="tag b">对抗式验证 adversarial critique</span>
+    <span class="tag b">多源事实核查 multi-source fact-check</span>
+  </div>
+  <p><strong>关键点：</strong>"多 Agent"的价值假设是<em>多样性带来纠错</em>。如果 N 个 Agent 犯的是同一个错误，那 N 只是把同一个错误放大了 N 次。</p>
+  <h3>1.2 什么是"收敛"</h3>
+  <p>收敛指迭代过程停止在某个稳定状态。但这里有个陷阱——</p>
+  <div class="box warn">
+    <span class="lb">关键区分</span>
+    <p><strong>收敛 ≠ 正确。</strong>两个 Agent 一起把错误答案越辩越确信，是完美收敛到了错误答案。</p>
+    <p>所以"辩论会不会收敛"这个问题本身是不完整的。真正要问的是二元的：<em>它收敛到了<strong>事实</strong>，还是收敛到了<strong>共识</strong>？</em></p>
+  </div>
+  <table>
+    <thead><tr><th style="width:24%">术语</th><th style="width:36%">定义</th><th>性质</th></tr></thead>
+    <tbody>
+      <tr><td>收敛 convergence</td><td>迭代后输出趋于稳定、变化率低于阈值</td><td><span class="pill b">过程量</span></td></tr>
+      <tr><td>共识 consensus</td><td>多个 Agent 的结论一致</td><td><span class="pill v">结果量</span></td></tr>
+      <tr><td>正确性 correctness</td><td>结论与外部事实一致</td><td><span class="pill g">目标量</span></td></tr>
+      <tr><td>共识质量 consensus quality</td><td>在达成共识的前提下正确的比例</td><td><span class="pill g">本文核心指标</span></td></tr>
+    </tbody>
+  </table>
+  <h3>1.3 直接答案</h3>
+  <div class="box key">
+    <span class="lb">结论</span>
+    <p><strong>不能。</strong>在<em>默认自由辩论 + 多数投票</em>的配置下，多 Agent 辩论<strong>不能</strong>可靠给出正确答案，因为共享同一份错误前提的 Agent 会互相强化错误，把正确的少数派压死。</p>
+    <p><strong>但可以。</strong>如果引入三个机制——<em>论点独立性校验</em>、<em>信息不对称 + 强制证据引入</em>、<em>按证据链而非票数收敛</em>——辩论可以在<strong>证据层面</strong>收敛到正确答案。</p>
+  </div>
+  <p>所以这道题的合格答法不是"能"或"不能"，而是<strong>先分情况，再讲机制配置</strong>。</p>
+</section>
+
+<section id="s2">
+  <h2><span class="num">2</span>为什么默认机制会失效</h2>
+  <p class="lead">失效不是偶发 bug，而是默认配置下的<strong>必然结果</strong>。要修就得知道病根在哪。</p>
+  <figure>
+    <svg viewBox="0 0 900 400" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;margin:20px 0">
+      <defs>
+        <marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L7,3 z" fill="#8a90a0"/>
+        </marker>
+        <marker id="ahr" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L7,3 z" fill="#b8322a"/>
+        </marker>
+      </defs>
+      <text class="svg-t" x="8" y="24">默认配置：自由辩论 + 多数投票</text>
+
+      <rect x="52" y="42" width="200" height="48" rx="9" fill="var(--paper)" stroke="var(--rule2)"/>
+      <text class="svg-s" x="64" y="63">① 各 Agent 给出初始答案</text>
+      <text class="svg-s" x="64" y="82">A / B / C 基于同一批检索</text>
+
+      <rect x="52" y="104" width="200" height="48" rx="9" fill="var(--paper)" stroke="var(--rule2)"/>
+      <text class="svg-s" x="64" y="125">② 互相阅读推理过程</text>
+      <text class="svg-s" x="64" y="144">看到对方也这么写 → 强化信心</text>
+
+      <rect x="52" y="166" width="200" height="48" rx="9" fill="var(--paper)" stroke="var(--rule2)"/>
+      <text class="svg-s" x="64" y="187">③ 修改自己的观点</text>
+      <text class="svg-s" x="64" y="206">附和多数意见 conformity</text>
+
+      <rect x="52" y="228" width="200" height="48" rx="9" fill="var(--paper)" stroke="var(--rule2)"/>
+      <text class="svg-s" x="64" y="249">④ 循环若干轮后投票</text>
+      <text class="svg-s" x="64" y="268">按票数取多数</text>
+
+      <line x1="152" y1="93"  x2="152" y2="101" stroke="#8a90a0" stroke-width="1.6" marker-end="url(#ah)"/>
+      <line x1="152" y1="155" x2="152" y2="163" stroke="#8a90a0" stroke-width="1.6" marker-end="url(#ah)"/>
+      <line x1="152" y1="217" x2="152" y2="225" stroke="#8a90a0" stroke-width="1.6" marker-end="url(#ah)"/>
+      <path d="M 52 252 L 26 252 L 26 66 L 46 66" fill="none" stroke="#8a90a0" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#ah)"/>
+      <text class="svg-s" x="8" y="300" font-style="italic">每一轮都回到起点，且信心被上一轮抬高</text>
+
+      <text class="svg-t" x="290" y="24" fill="#b8322a">失败闭环：错误证据的循环强化</text>
+
+      <rect x="396" y="44" width="196" height="54" rx="9" fill="var(--red-bg)" stroke="#b8322a" stroke-opacity=".4"/>
+      <text class="svg-s" x="408" y="67" fill="#b8322a">多个 Agent 表达</text>
+      <text class="svg-s" x="408" y="86" fill="#b8322a">相似错误结论</text>
+
+      <circle cx="692" cy="142" r="30" fill="var(--red-bg)" stroke="#b8322a" stroke-width="1.6"/>
+      <text class="svg-b" x="692" y="139" text-anchor="middle" fill="#b8322a">脏检索</text>
+      <text class="svg-s" x="692" y="157" text-anchor="middle" fill="#b8322a">结果</text>
+
+      <rect x="712" y="212" width="164" height="54" rx="9" fill="var(--red-bg)" stroke="#b8322a" stroke-opacity=".4"/>
+      <text class="svg-s" x="724" y="235" fill="#b8322a">多个 Agent</text>
+      <text class="svg-s" x="724" y="254" fill="#b8322a">引用对方错误论据</text>
+
+      <path d="M 664 132 A 56 56 0 0 0 596 84" fill="none" stroke="#b8322a" stroke-width="1.6" marker-end="url(#ahr)"/>
+      <path d="M 494 100 L 494 239 L 708 239" fill="none" stroke="#b8322a" stroke-width="1.6" marker-end="url(#ahr)"/>
+      <path d="M 794 208 C 794 170, 756 158, 720 156" fill="none" stroke="#b8322a" stroke-width="1.6" marker-end="url(#ahr)"/>
+
+      <text class="svg-s" x="290" y="300" fill="#b8322a" font-style="italic">错误论据互相引用，每次迭代置信度上升，正确观点被挤出</text>
+      <rect x="290" y="316" width="602" height="64" rx="10" fill="var(--red-bg)" stroke="#b8322a" stroke-opacity=".45"/>
+      <text class="svg-b" x="304" y="342" fill="#b8322a">结果：正确答案被压成少数派，系统出现「辩论极化」</text>
+      <text class="svg-s" x="304" y="364" fill="#b8322a">收敛到了共识，但没收敛到事实</text>
+    </svg>
+  <figcaption>图 1 · 默认配置的失败闭环：错误论据互相引用，每轮迭代都让错的那一边显得更确定</figcaption>
+  </figure>
+
+  <h3>2.1 病根一：亲和多数（conformity / 附和多数）</h3>
+  <p>在人类辩论里，"少数派"是有信息量的：它意味着存在分歧，分歧本身提示可能有东西没被看到。但在 LLM 辩论里，情况是反的——<strong>表态本身会改变后续的票数分布</strong>。</p>
+  <p>机制是这样的：Agent A 先写下结论 P，其他 Agent 读到的不只是"结论 P"，而是"A 用这套论证支持 P"。论证看起来有结构、有引用，<em>模仿论证的动机强于检验论证的动机</em>。于是下一轮，支持 P 的比例从 40% 升到 65%，再下一轮升到 85%。</p>
+  <div class="box warn">
+    <span class="lb">与人类辩论的关键差别</span>
+    <p>人类的少数派通常会坚持并据理力争；LLM 面对一个"看起来更完善"的版本会主动让步。结果是<strong>辩论轮数越多，少数派越沉默</strong>，而轮数越多恰恰越像"已经想清楚了"。</p>
+  </div>
+  <p>更麻烦的是，这条通路和"收敛"在指标上完全同形：差异率一路下降到 0。系统看到的是完美收敛，看不到的是正确观点已经在第三轮就被挤出去了。</p>
+
+  <h3>2.2 病根二：相关性错误（correlated errors）</h3>
+  <p>多数投票成立的前提是<strong>投票者相互独立</strong>。在多 Agent 系统里这个前提几乎从不成立，因为 Agent 通过同一批检索、同一个提示词模板、同一个模型权重产生结论。</p>
+    <figure>
+    <svg viewBox="0 0 900 320" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;margin:20px 0">
+    <defs>
+      <marker id="ah2" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L7,3 z" fill="#8a90a0"/>
+      </marker>
+      <marker id="ahg" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L7,3 z" fill="#1a7a4a"/>
+      </marker>
+    </defs>
+    <text class="svg-t" x="8" y="22">看起来是「三个 Agent 互相印证」，实际只有一份来源</text>
+
+    <rect x="8" y="120" width="164" height="62" rx="10" fill="var(--red-bg)" stroke="#b8322a" stroke-width="1.4"/>
+    <text class="svg-b" x="90" y="146" text-anchor="middle" fill="#b8322a">来源只有 1 份</text>
+    <text class="svg-s" x="90" y="166" text-anchor="middle" fill="#b8322a">同一批检索结果</text>
+
+    <path d="M176,140 L 226,72" fill="none" stroke="#8a90a0" stroke-width="1.5" marker-end="url(#ah2)"/>
+    <path d="M176,151 L 226,151" fill="none" stroke="#8a90a0" stroke-width="1.5" marker-end="url(#ah2)"/>
+    <path d="M176,162 L 226,230" fill="none" stroke="#8a90a0" stroke-width="1.5" marker-end="url(#ah2)"/>
+
+    <rect x="232" y="44" width="196" height="56" rx="9" fill="var(--paper)" stroke="var(--rule2)"/>
+    <text class="svg-s" x="244" y="66">Agent A</text>
+    <text class="svg-s" x="244" y="84">「应该用方案 X」</text>
+    <rect x="232" y="123" width="196" height="56" rx="9" fill="var(--paper)" stroke="var(--rule2)"/>
+    <text class="svg-s" x="244" y="145">Agent B</text>
+    <text class="svg-s" x="244" y="163">「应该用方案 X」</text>
+    <rect x="232" y="202" width="196" height="56" rx="9" fill="var(--paper)" stroke="var(--rule2)"/>
+    <text class="svg-s" x="244" y="224">Agent C</text>
+    <text class="svg-s" x="244" y="242">「应该用方案 X」</text>
+
+    <path d="M432,72 L 486,128" fill="none" stroke="#8a90a0" stroke-width="1.5" marker-end="url(#ah2)"/>
+    <path d="M432,151 L 486,151" fill="none" stroke="#8a90a0" stroke-width="1.5" marker-end="url(#ah2)"/>
+    <path d="M432,230 L 486,174" fill="none" stroke="#8a90a0" stroke-width="1.5" marker-end="url(#ah2)"/>
+
+    <rect x="492" y="118" width="184" height="66" rx="10" fill="var(--red-bg)" stroke="#b8322a" stroke-width="1.4"/>
+    <text class="svg-b" x="584" y="145" text-anchor="middle" fill="#b8322a">投票：3 : 0</text>
+    <text class="svg-s" x="584" y="166" text-anchor="middle" fill="#b8322a">判定「一致通过」</text>
+
+    <line x1="8" y1="278" x2="892" y2="278" stroke="var(--rule2)" stroke-width="1" stroke-dasharray="4 4"/>
+    <text class="svg-s" x="8" y="298">票数写的是 3，实际独立来源数是 1 —— 这就是「伪多数」pseudomajority</text>
+    <text class="svg-s" x="8" y="315" fill="#1a7a4a">把 3 票折算成 1 份证据后，系统就应当知道自己没有共识</text>
+      </svg>
+  <figcaption>图 2 · 同源污染制造伪多数：三票其实只算一票，而投票器无法分辨</figcaption>
+  </figure>
+  <p>这里的错误不是随机噪声，而是<strong>共享的同一条污染链路</strong>。脏数据进来一次，被三个 Agent 各读一遍，就变成了三票。投票器数的是 Agent 个数，不是证据份数。</p>
+
+  <h3>2.3 病根三：投票是弱聚合器</h3>
+  <p>即便真的有三份独立意见，多数投票也未必比单次调用更好。多数投票要成立，至少需要下面三条同时成立，而它们在 LLM 上全部存疑：</p>
+  <table>
+    <thead><tr><th style="width:30%">隐含假设</th><th style="width:34%">在 LLM Agent 上的实际情况</th><th>后果</th></tr></thead>
+    <tbody>
+      <tr><td>投票者相互独立</td><td>共享同一批检索与同一套权重</td><td><span class="pill r">不成立</span> 伪多数</td></tr>
+      <tr><td>单个 Agent 的错误率低于 50%</td><td>困难任务上错误率可能高达 70%，且错误高度相似</td><td><span class="pill r">不成立</span> 多数即错</td></tr>
+      <tr><td>每个投票者等权可靠</td><td>无法区分"引用了三篇论文"和"语气特别自信"</td><td><span class="pill r">不成立</span> 强弱被抹平</td></tr>
+    </tbody>
+  </table>
+  <p>关键在第三条：投票是一个<strong>把权重信息全部丢掉</strong>的操作。它只保留计数，不保留"这个 Agent 引用了什么"。而计数恰恰是信息量最小的那一维。</p>
+  <div class="box key">
+    <span class="lb">由此得出的设计原则</span>
+    <p>不要问"几个 Agent 同意"，要问<strong>"有几分互相独立的证据支持这个结论"</strong>。这就是第 3 节要引入来源指纹与聚类去重的直接原因。</p>
+  </div>
+
+  <h3>2.4 三个病根的分工</h3>
+  <table>
+    <thead><tr><th style="width:22%">病根</th><th style="width:26%">触发条件</th><th style="width:26%">被哪一节解决</th><th>解法一句话</th></tr></thead>
+    <tbody>
+      <tr><td>亲和多数</td><td>Agent 互见推理过程后自我修改</td><td>第 4 节</td><td>Answer 阶段隔离上下文，让证据先于观点存在</td></tr>
+      <tr><td>相关性错误</td><td>多个 Agent 共享同一批错误输入</td><td>第 3 节</td><td>来源指纹分层 + DSU 聚类，把 3 票折算成 1 份</td></tr>
+      <tr><td>投票是弱聚合器</td><td>只看计数，不看证据来源</td><td>第 3 + 5 节</td><td>按证据等级加权投票，并在证据不足时拒答</td></tr>
+    </tbody>
+  </table>
+  <p>三个病根都指向同一件事：<strong>默认机制缺的不是"更多 Agent"，而是"证据的独立性度量"</strong>。接下来三节分别补上它缺失的三个部件。</p>
+</section>
+
+<section id="s3">
+  <h2><span class="num">3</span>机制一：论点独立性校验</h2>
+  <p class="lead">在辩论<em>开始之前</em>就介入，切断错误前提的重复计票。</p>
+  <h3>3.1 规则</h3>
+  <ol>
+    <li>辩论开始前，收集每个 Agent 的<strong>初始论据来源集合</strong> <code>S_i</code>（文档 ID、段落、检索 query、工具调用、引用 URL 等）。</li>
+    <li>计算来源指纹（见 3.2）。</li>
+    <li>若两个 Agent 的指纹存在交集，则其论点<strong>标记为非独立</strong>。</li>
+    <li>投票时：<strong>同一独立性簇内只贡献一个权重</strong>，而不是每个 Agent 各算一票。</li>
+  </ol>
+  <div class="box tip">
+    <span class="lb">效果</span>
+    <p>同一份噪声被重复计票的可能性被消除。上图中 2 : 1 的错误多数会退化为 <strong>1 簇 : 1 簇</strong>，正确的 Agent B 不再因为"人少"而被压制。</p>
+  </div>
+  <h3>3.2 来源指纹怎么算</h3>
+  <p>需要的是<strong>稳定且足够细</strong>的粒度。太粗会误合并，太细会漏合并。建议分层组合：</p>
+  <table>
+    <thead><tr><th style="width:20%">层级</th><th style="width:36%">构成</th><th>粒度影响</th></tr></thead>
+    <tbody>
+      <tr><td>文档级</td><td><code>doc_id</code>、URL 规范化后哈希</td><td>偏粗：两篇引用同一篇综述的独立论文会被误判为独立</td></tr>
+      <tr><td>段落级</td><td><code>sha256(normalize(text)[:512])</code></td><td><span class="pill g">推荐默认</span>，能识别改写搬运</td></tr>
+      <tr><td>检索级</td><td><code>hash(normalize(query) + 时间窗 + topk 文档ID集合)</code></td><td>识别"同一批检索结果"最有效</td></tr>
+      <tr><td>推理链级</td><td>论据序列的 n-gram 重合度（SimHash / MinHash）</td><td>兜底，捕捉隐式共享的推理模板</td></tr>
+    </tbody>
+  </table>
+  <div class="box warn">
+    <span class="lb">注意</span>
+    <p>指纹必须对<strong>无关的表面差异免疫</strong>：去除时间戳、临时 ID、语言改写、空格与标点。<code>normalize</code> 做不好，独立性校验就会因为"格式不同"而误判为独立，等于没做。</p>
+  </div>
+  <h3>3.3 伪代码</h3>
+<pre><code># 辩论开始前执行一次
+def build_independence_clusters(agents):
+    fingerprints = [source_fingerprint(a.citations) for a in agents]   # 见 3.2
+    clusters = DSU(len(agents))
+
+    for i in range(len(agents)):
+        for j in range(i + 1, len(agents)):
+            if shares_source(fingerprints[i], fingerprints[j]):
+                clusters.union(i, j)          # 同源 → 合并为一簇
+
+    return clusters
+
+
+def vote(agents, clusters):
+    # 关键：权重按"簇"累加，而不是按 Agent 累加
+    tally = Counter()
+    for cid, members in clusters.items():
+        # 簇内意见不一致时，说明簇本身不可靠，降权或弃权
+        answers = {agents[m].answer for m in members}
+        if len(answers) &gt; 1:
+            continue                             # 内部矛盾 → 不计票
+        tally[answers.pop()] += 1.0            # 无论簇内有几个 Agent，都只算 1 票
+    return tally</code></pre>
+  <div class="box note">
+    <span class="lb">设计取舍</span>
+    <p>那个 <code>continue</code> 是刻意的：簇内成员答案不一致，说明这批 Agent 只是"碰巧引用了同一份文档"，并不构成一个可靠的独立证据单元。工程上更常见的做法是给它 0.5 的折扣权重而不是完全弃权。</p>
+  </div>
+</section>
+
+<section id="s4">
+  <h2><span class="num">4</span>机制二：信息不对称 + 强制证据引入</h2>
+  <p class="lead">把"互相看答案然后改口"换成"每轮必须拿出新东西"。</p>
+  <h3>4.1 为什么对称信息必然收敛到共识</h3>
+  <p>在默认辩论里，所有 Agent 每一轮看到的信息集是<strong>完全相同</strong>的（就是其他人的当前输出）。这构成一个对称的信息结构，后果是：</p>
+  <ul>
+    <li>没有任何 Agent 拥有别人没有的信息 → 无法产生认知增量；</li>
+    <li>每轮的新输入只是"别人的结论" → 系统的唯一变化来源是<em>社会影响</em>，而不是证据；</li>
+    <li>对称信息下的动力学必然趋向对称均衡，也就是<strong>共识</strong>，哪怕共识是错的。</li>
+  </ul>
+  <p>所以必须<strong>人为打破对称</strong>，给每个 Agent 一份别人看不到的私有证据。</p>
+  <h3>4.2 两条规则</h3>
+  <ol>
+    <li><strong>私有证据</strong>：每个 Agent 在某一侧持有其他 Agent 看不到的材料（如 Agent A 拿检索文档、Agent B 拿计算/执行结果、Agent C 拿反例构造器）。</li>
+    <li><strong>强制引入</strong>：每一轮，每个 Agent <em>必须</em>提交一条本轮新引入的证据。没交 → 判为"无贡献轮"，该轮不计入收敛判断，甚至降权。</li>
+  </ol>
+  <h3>4.3 证据簿记</h3>
+  <p>需要一个共享但只增不改的证据账本，避免"新证据"其实是被反复重提的旧证据：</p>
+<pre><code>class EvidenceLedger:
+    """只增不改的证据账本：新证据的判定基准"""
+
+    def __init__(self):
+        self.items = []            # 全部证据，带 fingerprint 与 round 引入
+        self._seen = set()
+
+    def add(self, ev, round_no) -&gt; bool:
+        fp = ev.fingerprint()
+        if fp in self._seen:
+            return False            # 旧证据重提 → 拒绝
+        self._seen.add(fp)
+        self.items.append(ev.round(round_no))
+        return True                 # True = 本轮真有新证据
+
+
+def require_new_evidence(agent, ledger, round_no):
+    """每轮调用。返回该 Agent 本轮的权重调整。"""
+    ev = agent.propose_evidence()   # 新检索 / 新计算 / 新反例
+    if ev is None or not ledger.add(ev, round_no):
+        return PENALTY_NO_NEW_EVIDENCE      # 无贡献轮
+    return 0.0                              # 不奖不罚，交给证据质量决定</code></pre>
+  <h3>4.4 证据权重怎么给</h3>
+  <table>
+    <thead><tr><th style="width:14%">等级</th><th style="width:28%">类型</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill g">L4</span></td><td>一手可复现数据</td><td>原始记录、官方统计、可重跑的实验结果</td></tr>
+      <tr><td><span class="pill g">L3</span></td><td>可验证的推论</td><td>基于 L4 的计算/推理，中间步骤可审计</td></tr>
+      <tr><td><span class="pill b">L2</span></td><td>结构化二手来源</td><td>有独立来源的综述、权威数据库条目</td></tr>
+      <tr><td><span class="pill r">L1</span></td><td>未标注来源</td><td>模型"记忆"里的内容，无法回溯 —— <b>不可验证，不应参与收敛判定</b></td></tr>
+      <tr><td><span class="pill r">L0</span></td><td>无证据的断言</td><td>纯立场表达，直接不计入权重</td></tr>
+    </tbody>
+  </table>
+  <div class="box warn">
+    <span class="lb">LLM 场景的关键约束</span>
+    <p>LLM 有时会<strong>编造</strong>看起来很像 L2/L3 的证据（带 URL、带数字、带推导）。所以机制二<strong>必须</strong>配合一次可验证性检查：URL 是否可访问、引用是否真的包含所引用的片段、计算是否可重跑。跳过这一步，辩论会从"收敛到错误"退化成"收敛到幻觉"。</p>
+  </div>
+  <p><strong>权重转移规则：</strong>谁的证据能<em>推翻对方的推理链</em>，谁的权重上升；被推翻方权重下降。关键在于"推翻"要落到具体步骤上，而不是整体性的"我觉得你错了"。</p>
+</section>
+
+<section id="s5">
+  <h2><span class="num">5</span>机制三：按证据链收敛</h2>
+  <p class="lead">把系统从"数票"改成"审证据"的最后一步，也是最难的一步。</p>
+  <h3>5.1 核心转向</h3>
+  <div class="formula">
+    <div class="lb">收敛判据</div>
+    <div class="eq">
+      <span class="x">判定 =</span> <span class="a">证据链完整性</span>
+      <span class="x">×</span> <span class="b">可验证性</span>
+      <span class="x">×</span> <span class="c">独立性</span>
+    </div>
+  </div>
+  <p>投票数不消失，但降级为<strong>辅助信号</strong>：用于在证据强度接近时打破平局，或作为异常检测的输入（票数与证据强度严重背离时，通常意味着存在未识别的同源问题）。</p>
+  <h3>5.2 证据链完整性的形式化</h3>
+<pre><code>class ChainStatus(Enum):
+    CLOSED       = "closed"       # 结论→每步推理→每条证据，全部可追溯可验证
+    OPEN         = "open"         # 有步骤缺证据，或证据不可验证
+    CONTRADICTED = "contradicted" # 存在另一条同等级但结论矛盾的闭合链
+
+
+def chain_score(chain, ledger) -&gt; float:
+    """返回 [0,1]；只有 CLOSED 才可能 &gt; 0.5"""
+    if not chain.steps:
+        return 0.0
+
+    verified = 0.0
+    for step in chain.steps:
+        ev = ledger.get(step.citation)
+        if ev is None:
+            continue                      # 引用了不存在的证据
+        if not verify(ev, step.claim):
+            continue                      # 证据存在但不支持该主张
+        if ev.fingerprint in step.ancestor_fingerprints:
+            continue                      # 与自己前文同源 = 循环论证
+        verified += weight(ev.level)       # L4 &gt; L3 &gt; L2 &gt; L1
+
+    coverage = verified / len(chain.steps)
+    indep    = independence_ratio(chain, ledger)   # 独立来源数 / 总引用数
+    return round(coverage * indep, 4)</code></pre>
+  <div class="box tip">
+    <span class="lb">这段代码在防什么</span>
+    <p><code>ancestor_fingerprints</code> 那个条件专门拦<strong>循环论证</strong>：Agent 说"结论 X 成立，因为 Agent 2 说的"，而 Agent 2 的依据又回到同一份来源 —— 表面上是两个 Agent 互相印证，实际证据数还是 1。这是投票法永远抓不到、但证据链法能抓到的失效模式。</p>
+  </div>
+  <h3>5.3 停机条件</h3>
+  <p>辩论不能无限跑。设 <code>S(t)</code> 为第 t 轮的最高证据链得分，任一条件满足即停：</p>
+  <table>
+    <thead><tr><th style="width:28%">停机条件</th><th style="width:20%">类型</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><code>S(t) ≥ τ_high</code></td><td><span class="pill g">充分</span></td><td>存在一条闭合且无矛盾的证据链，直接采纳，结束</td></tr>
+      <tr><td><code>ΔS(t) &lt; ε</code> 连续 k 轮</td><td><span class="pill b">停滞</span></td><td>得分不再提升，说明已僵局，触发升级而非继续烧 token</td></tr>
+      <tr><td>两条 CLOSED 链矛盾</td><td><span class="pill v">对抗</span></td><td>转人工/仲裁模型，或强制引入第三方独立检索打破平衡</td></tr>
+      <tr><td>轮数达上限 <code>t ≥ T_max</code></td><td><span class="pill r">兜底</span></td><td>硬上限，返回当前最优链并<strong>标记未收敛</strong></td></tr>
+      <tr><td>独立性覆盖率 &lt; τ_indep</td><td><span class="pill r">前置</span></td><td>所有 Agent 证据都来自同一来源，提前终止并<strong>拒绝给结论</strong></td></tr>
+    </tbody>
+  </table>
+  <div class="box note">
+    <span class="lb">容易被忽略的一条</span>
+    <p>最后那个"独立性覆盖率过低则拒绝给结论"很重要。多数系统会选择"拿票数最多的凑一个答案交差"，但系统在证据不足时<strong>正确的行为是说"不知道"</strong>。共识质量这个指标必须包含"该拒答时拒答"，否则一个永远自信的系统会拿满准确率。</p>
+  </div>
+  <h3>5.4 失效模式对照表</h3>
+  <table>
+    <thead><tr><th style="width:32%">失效模式</th><th style="width:32%">票数法能否发现</th><th>证据链法能否发现</th></tr></thead>
+    <tbody>
+      <tr><td>附和多数 sycophancy</td><td><span class="pill r">否</span> — 高票数看起来很健康</td><td><span class="pill g">能</span> — 轮次间证据无新增即停滞</td></tr>
+      <tr><td>同源污染</td><td><span class="pill r">否</span> — 多票来自同一份脏数据</td><td><span class="pill g">能</span> — 独立性聚类直接合并</td></tr>
+      <tr><td>循环论证</td><td><span class="pill r">否</span> — 互引看起来像互证</td><td><span class="pill g">能</span> — 祖先指纹检查命中</td></tr>
+      <tr><td>编造证据</td><td><span class="pill r">否</span> — 自信语气伪装可信</td><td><span class="pill g">能</span> — verify() 直接失败</td></tr>
+      <tr><td>过度自信的一致错误</td><td><span class="pill r">否</span> — 票数一致</td><td><span class="pill b">部分</span> — 仅当撞上可验证性检查</td></tr>
+    </tbody>
+  </table>
+</section>
+<section id="s6">
+  <h2><span class="num">6</span>评估与度量</h2>
+  <p class="lead">机制设计得再漂亮，如果只用准确率去评估，几乎一定会得出"辩论没用"的错误结论。这章给出一套能真正分辨机制的指标。</p>
+
+  <h3>6.1 为什么准确率不够</h3>
+  <p>设想一个只输出多数票的系统和一个"该拒答就拒答"的系统，在 100 道题上：</p>
+  <table>
+    <thead><tr><th style="width:34%">系统</th><th style="width:15%">答对</th><th style="width:15%">答错</th><th style="width:15%">拒答</th><th>表面准确率</th></tr></thead>
+    <tbody>
+      <tr><td>永远给答案</td><td>55</td><td>45</td><td>0</td><td>55%</td></tr>
+      <tr><td>有把握才答</td><td>49</td><td>21</td><td>30</td><td>70%<span class="pill b">口径不同</span></td></tr>
+    </tbody>
+  </table>
+  <p>第二个系统的 70% 只是因为把难题推给了拒答桶。真正该看的是<strong>在它选择回答的那些题上答对了多少</strong>——这才是<em>共识质量</em>。</p>
+  <div class="box note">
+    <span class="lb">评估原则</span>
+    <p>报告结果时，<strong>准确率、拒答率、覆盖率必须成对出现</strong>。任何只报一个数字的辩论系统评测都是不可信的。</p>
+  </div>
+
+  <h3>6.2 八个核心指标</h3>
+  <table>
+    <thead><tr><th style="width:22%">指标</th><th style="width:38%">定义</th><th>看什么 / 健康区间</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>共识质量</strong><br><code>consensus_quality</code></td>
+        <td>达成共识的样本中结论正确的比例</td>
+        <td>本文的北极星指标。它把"收敛"和"正确"绑在一起，票数法在这一项上通常明显低于证据链法</td>
+      </tr>
+      <tr>
+        <td><strong>正确率</strong><br><code>accuracy</code></td>
+        <td>全量样本中答对的比例（拒答计为未答对）</td>
+        <td>对外汇报用，但必须与覆盖率并列</td>
+      </tr>
+      <tr>
+        <td><strong>覆盖率</strong><br><code>coverage</code></td>
+        <td>系统愿意给出确定结论的比例</td>
+        <td>过高（接近 100%）通常意味着没有拒答机制；过低则失去实用价值。实践目标区间常在 70–90%</td>
+      </tr>
+      <tr>
+        <td><strong>收敛轮数</strong><br><code>rounds</code></td>
+        <td>触发停机条件所需的轮次均值与 P95</td>
+        <td>P95 比均值重要——长尾决定用户体验和成本上限</td>
+      </tr>
+      <tr>
+        <td><strong>单轮证据增益</strong><br><code>evidence_yield</code></td>
+        <td>每轮新增的、通过校验的独立证据条数</td>
+        <td>判停的核心信号。连续 2 轮为 0 说明辩论已空转，与"意见趋于一致"是两件事</td>
+      </tr>
+      <tr>
+        <td><strong>独立性覆盖率</strong><br><code>independence_coverage</code></td>
+        <td>最终结论所依赖的证据簇中，来源指纹互相独立的比例</td>
+        <td>低于阈值应直接拒绝给结论。三个 Agent 来自同一份文档时，这个值是 33% 而不是 100%</td>
+      </tr>
+      <tr>
+        <td><strong>过度一致率</strong><br><code>over_consistency</code></td>
+        <td>结论一致但错误的样本占比</td>
+        <td>这是"辩论有毒"的直接度量。票数法会把它推得很高，证据链法能压下来一部分</td>
+      </tr>
+      <tr>
+        <td><strong>单位正确成本</strong><br><code>cost_per_correct</code></td>
+        <td>总 token 花费 ÷ 答对题数</td>
+        <td>辩论通常比单 Agent 贵 5–20 倍。这个指标比"准确率提升 3%"更能决定能不能上生产</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>6.3 消融实验：证明机制真的在起作用</h3>
+  <p>每个机制单独关掉再测一遍，才能知道它贡献了多少。缺了这步，你只是有一堆相关性数据。</p>
+  <table>
+    <thead><tr><th style="width:28%">实验组</th><th style="width:34%">配置</th><th>预期观测到的差异</th></tr></thead>
+    <tbody>
+      <tr><td>Baseline-0</td><td>单 Agent，无辩论</td><td>基线。多数题上它并不比辩论差多少</td></tr>
+      <tr><td>Baseline-1</td><td>多 Agent 自由辩论 + 多数投票</td><td>轮次增加、成本上升，但<strong>共识质量往往不升反降</strong>——这就是本文要解释的现象</td></tr>
+      <tr><td>+ M1</td><td>Baseline-1 加独立性校验</td><td>共识质量开始上升，成本基本不变（只做了去重）</td></tr>
+      <tr><td>+ M2</td><td>M1 加信息不对称与强制证据</td><td>分歧度先升后收敛；<code>evidence_yield</code> 显著大于 Baseline-1</td></tr>
+      <tr><td>+ M3</td><td>M2 加证据链停机</td><td>平均轮数下降，<code>over_consistency</code> 明显下降，<code>cost_per_correct</code> 达到最低</td></tr>
+      <tr><td>− 拒答</td><td>完整系统但关闭拒答门</td><td>准确率虚高，<strong>共识质量骤降</strong>——用来证明 5.3 节那条"覆盖率过低则拒答"不是摆设</td></tr>
+    </tbody>
+  </table>
+  <div class="box warn">
+    <span class="lb">做实验时最容易犯的三个错</span>
+    <ol>
+      <li><strong>只测干净数据。</strong>真实任务里有脏数据、外部检索错误、工具超时。噪声注入后的表现才是可用性。</li>
+      <li><strong>只跑一个随机种子。</strong>辩论的方差极大，3 次以内跑出的差异不能当结论。至少 5 个种子并报告置信区间。</li>
+      <li><strong>用同一批题同时调参和评测。</strong>参数是在验证集上挑的，测试集必须独立。</li>
+    </ol>
+  </div>
+  <div class="box tip">
+    <span class="lb">快速验证实验</span>
+    <p>如果预算有限，只做一个实验也够：<strong>同源污染注入</strong>。给 3 个 Agent 喂入 2 份相同的、且包含错误的背景资料，然后看最终答案是否被带偏。票数法几乎必然被带偏，证据链法应该能识别出来。</p>
+  </div>
+</section><section id="s7">
+  <h2><span class="num">7</span>反模式与自查清单</h2>
+  <p class="lead">下面每一条都对应真实系统里反复出现的失败方式。左边是症状，右边是它的根因。</p>
+
+  <h3>7.1 十二个反模式</h3>
+  <table>
+    <thead><tr><th style="width:24%">反模式</th><th style="width:32%">典型表现</th><th>根因与修法</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>投票即真理</strong></td>
+        <td>跑 N 轮后取票数最多的答案，不看任何依据</td>
+        <td>把共识当正确。修法：投票只作为<em>最后一步的平局裁决</em>，不作为证据的替代</td>
+      </tr>
+      <tr>
+        <td><strong>共享全量上下文</strong></td>
+        <td>所有 Agent 一开始就看到彼此的答案和背景资料</td>
+        <td>制造了信息对称的附和。修法：<code>answer</code> 阶段隔离，只在 <code>critique</code> 阶段有限互见</td>
+      </tr>
+      <tr>
+        <td><strong>无停机条件</strong></td>
+        <td>设固定轮数（如永远 5 轮）或"感觉差不多了就停"</td>
+        <td>浪费成本且不可复现。修法：用第 5.3 节的五条可计算停机条件</td>
+      </tr>
+      <tr>
+        <td><strong>无来源指纹</strong></td>
+        <td>无法回答"这条信息你是从哪看到的"</td>
+        <td>同源污染不可检测。修法：强制每个 Claim 附带 <code>source_fingerprint</code></td>
+      </tr>
+      <tr>
+        <td><strong>证据不可验证</strong></td>
+        <td>Agent 可以写出一段听起来很真的"引文"，系统照单全收</td>
+        <td>编造证据畅通无阻。修法：外部可查证的 Claim 必须过 <code>verify()</code>，失败即扣分</td>
+      </tr>
+      <tr>
+        <td><strong>循环论证不阻断</strong></td>
+        <td>A 引用 B，B 又引用 A，双方都认为得到了互证</td>
+        <td>祖先指纹检查缺失。修法：新 Claim 的指纹若命中簇内已有指纹，判为无效增量</td>
+      </tr>
+      <tr>
+        <td><strong>把语气当证据</strong></td>
+        <td>表述自信、术语准确、格式工整的答案被赋予更高权重</td>
+        <td>这是 LLM 之间最容易被利用的偏置。修法：<code>confidence</code> 字段不可信，一律由外部校验决定</td>
+      </tr>
+      <tr>
+        <td><strong>角色标签带来的偏置</strong></td>
+        <td>指定"你是批评家"后，该 Agent 倾向于<em>永远</em>提出反对意见</td>
+        <td>角色变成表演。修法：批评必须附带具体 Claim，否则本轮弃权</td>
+      </tr>
+      <tr>
+        <td><strong>无拒答门</strong></td>
+        <td>任何情况下都强行给一个答案</td>
+        <td>共识质量被虚假抬高。修法：独立性覆盖率或证据等级不达标即输出"证据不足"</td>
+      </tr>
+      <tr>
+        <td><strong>只有最终答案被评估</strong></td>
+        <td>只看准确率，无法定位是哪个环节出错</td>
+        <td>无法归因。修法：中间产物（Claim 集合、指纹聚类、证据等级）必须落盘可审计</td>
+      </tr>
+      <tr>
+        <td><strong>Agent 数量堆砌</strong></td>
+        <td>把 3 个改成 15 个，准确率提升有限而成本翻数倍</td>
+        <td>相关性错误不会随 N 减少。修法：先把独立性覆盖率做上去，再谈加 N</td>
+      </tr>
+      <tr>
+        <td><strong>同一模型换 seed</strong></td>
+        <td>以为三个 Agent 是"独立的三个视角"</td>
+        <td>同模型同 prompt 的采样高度相关。修法：真正的多样性应来自不同检索源、不同工具、不同角色视角</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>7.2 上线前自查清单</h3>
+  <p>逐条对照。<strong>任何一条为"否"，系统的共识质量都不可信。</strong></p>
+  <table>
+    <thead><tr><th style="width:8%"></th><th style="width:52%">检查项</th><th>缺失的后果</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill g">01</span></td><td>每个 Claim 都有来源指纹，且指纹不依赖模型自述</td><td>同源污染不可检测</td></tr>
+      <tr><td><span class="pill g">02</span></td><td>Answer 阶段各 Agent 上下文相互隔离</td><td>第一轮就全体附和</td></tr>
+      <tr><td><span class="pill g">03</span></td><td>Critique 阶段只给对手结论，不给对手完整推理</td><td>模仿优于推理</td></tr>
+      <tr><td><span class="pill g">04</span></td><td>可外部查证的 Claim 全部经过 verify 步骤</td><td>编造引文可通行</td></tr>
+      <tr><td><span class="pill g">05</span></td><td>DSU 聚类在投票<em>之前</em>执行</td><td>多票被误当独立证据</td></tr>
+      <tr><td><span class="pill g">06</span></td><td>停机条件是可计算的数值判据，不是人工感觉</td><td>轮数不可复现</td></tr>
+      <tr><td><span class="pill g">07</span></td><td>存在明确的拒答分支，且拒答率被记录</td><td>准确率虚高</td></tr>
+      <tr><td><span class="pill g">08</span></td><td>报告结果时准确率与覆盖率成对给出</td><td>评测结论不可信</td></tr>
+      <tr><td><span class="pill g">09</span></td><td>做过至少一次消融实验以验证各机制贡献</td><td>无法证明设计有效</td></tr>
+      <tr><td><span class="pill g">10</span></td><td>在含噪声的输入上测过鲁棒性</td><td>上线即翻车</td></tr>
+      <tr><td><span class="pill g">11</span></td><td>所有中间产物（Claim / 指纹 / 等级）落盘可回溯</td><td>出问题无法定位</td></tr>
+      <tr><td><span class="pill g">12</span></td><td>记录了 <code>cost_per_correct</code> 而非只有 token 总数</td><td>无法判断能否上生产</td></tr>
+    </tbody>
+  </table>
+  <div class="box key">
+    <span class="lb">如果只能做三件事</span>
+    <p><strong>1.</strong> 加来源指纹与聚类去重（挡住同源污染）；<strong>2.</strong> 加证据等级与 verify（挡住编造证据）；<strong>3.</strong> 加拒答门（挡住虚假自信）。这三项的投入产出比最高，且都不需要改动模型的调用方式。</p>
+  </div>
+</section><section id="s8">
+  <h2><span class="num">8</span>概念地图</h2>
+  <p class="lead">这一章把本文放回更大的图景里：它和已有的几种多 Agent 范式到底差在哪，以及什么时候<em>不该</em>用辩论。</p>
+
+  <h3>8.1 三类多 Agent 范式</h3>
+  <svg viewBox="0 0 900 472" style="width:100%;height:auto;display:block;margin:20px 0" role="img" aria-label="多 Agent 范式与判定层次的概念图">
+    <defs>
+      <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" style="fill:var(--ink3)"/>
+      </marker>
+      <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" style="fill:var(--acc)"/>
+      </marker>
+    </defs>
+
+    <text x="20" y="24" style="font-size:11px;letter-spacing:.12em;fill:var(--ink3)">A · 输入侧的三种范式</text>
+    <g>
+      <rect x="20" y="38" width="270" height="74" rx="11" style="fill:var(--blue-bg);stroke:var(--blue)" stroke-width="1"/>
+      <text x="36" y="62" style="font-size:15px;font-weight:700;fill:var(--blue)">并采样聚合</text>
+      <text x="36" y="82" style="font-size:12.5px;fill:var(--ink2)">Self-Consistency</text>
+      <text x="36" y="100" style="font-size:12px;fill:var(--ink3)">各自独立答，投票，不互见</text>
+    </g>
+    <g>
+      <rect x="315" y="38" width="270" height="74" rx="11" style="fill:var(--acc-bg);stroke:var(--acc)" stroke-width="1"/>
+      <text x="331" y="62" style="font-size:15px;font-weight:700;fill:var(--acc)">迭代辩论 ← 本文所在</text>
+      <text x="331" y="82" style="font-size:12.5px;fill:var(--ink2)">互相批判并修正结论</text>
+      <text x="331" y="100" style="font-size:12px;fill:var(--ink3)">Mutual Refinement / Debate</text>
+    </g>
+    <g>
+      <rect x="610" y="38" width="270" height="74" rx="11" style="fill:var(--violet-bg);stroke:var(--violet)" stroke-width="1"/>
+      <text x="626" y="62" style="font-size:15px;font-weight:700;fill:var(--violet)">协作分工</text>
+      <text x="626" y="82" style="font-size:12.5px;fill:var(--ink2)">Mixture-of-Agents / 多源核查</text>
+      <text x="626" y="100" style="font-size:12px;fill:var(--ink3)">角色不同，产出互补后融合</text>
+    </g>
+
+    <path d="M450,118 L450,150" style="stroke:var(--ink3);stroke-width:1.5" marker-end="url(#ar)"/>
+    <text x="20" y="176" style="font-size:11px;letter-spacing:.12em;fill:var(--ink3)">B · 判定侧：三个不能互相替代的层次</text>
+
+    <g>
+      <rect x="20" y="192" width="270" height="80" rx="11" style="fill:var(--paper);stroke:var(--rule2)" stroke-width="1"/>
+      <text x="36" y="216" style="font-size:14.5px;font-weight:700;fill:var(--ink)">收敛 convergence</text>
+      <text x="36" y="236" style="font-size:12.5px;fill:var(--ink2)">过程量：输出变化率低于阈值</text>
+      <text x="36" y="256" style="font-size:12px;fill:var(--ink3)">答：还要跑多久？</text>
+    </g>
+    <g>
+      <rect x="315" y="192" width="270" height="80" rx="11" style="fill:var(--paper);stroke:var(--rule2)" stroke-width="1"/>
+      <text x="331" y="216" style="font-size:14.5px;font-weight:700;fill:var(--ink)">共识 consensus</text>
+      <text x="331" y="236" style="font-size:12.5px;fill:var(--ink2)">结果量：多个 Agent 结论一致</text>
+      <text x="331" y="256" style="font-size:12px;fill:var(--ink3)">答：大家同意了吗？</text>
+    </g>
+    <g>
+      <rect x="610" y="192" width="270" height="80" rx="11" style="fill:var(--green-bg);stroke:var(--green)" stroke-width="1.6"/>
+      <text x="626" y="216" style="font-size:14.5px;font-weight:700;fill:var(--green)">正确 correctness</text>
+      <text x="626" y="236" style="font-size:12.5px;fill:var(--ink2)">目标量：与外部事实一致</text>
+      <text x="626" y="256" style="font-size:12px;fill:var(--green)">答：同意得对吗？← 唯一重要的</text>
+    </g>
+
+    <path d="M290,232 L313,232" style="stroke:var(--ink3);stroke-width:1.5" marker-end="url(#ar)"/>
+    <path d="M585,232 L608,232" style="stroke:var(--ink3);stroke-width:1.5" marker-end="url(#ar)"/>
+
+    <g>
+      <rect x="20" y="304" width="860" height="134" rx="12" style="fill:var(--paper);stroke:var(--rule)" stroke-width="1"/>
+      <text x="40" y="330" style="font-size:12px;letter-spacing:.1em;fill:var(--acc)">C · 本文的三个机制，正好补上前两层与第三层之间的断裂</text>
+      <g>
+        <circle cx="60" cy="362" r="15" style="fill:var(--acc-bg);stroke:var(--acc)"/>
+        <text x="60" y="367" style="font-size:13px;font-weight:700;fill:var(--acc)" text-anchor="middle">1</text>
+        <text x="86" y="358" style="font-size:13.5px;font-weight:700;fill:var(--ink)">独立性校验</text>
+        <text x="86" y="378" style="font-size:12px;fill:var(--ink2)">判断多票是不是多份证据 → 打通「共识」与「正确」</text>
+      </g>
+      <g>
+        <circle cx="470" cy="362" r="15" style="fill:var(--acc-bg);stroke:var(--acc)"/>
+        <text x="470" y="367" style="font-size:13px;font-weight:700;fill:var(--acc)" text-anchor="middle">2</text>
+        <text x="496" y="358" style="font-size:13.5px;font-weight:700;fill:var(--ink)">信息不对称 + 强制证据</text>
+        <text x="496" y="378" style="font-size:12px;fill:var(--ink2)">让证据必须外源 → 防止闭环自洽</text>
+      </g>
+      <g>
+        <circle cx="60" cy="406" r="15" style="fill:var(--acc-bg);stroke:var(--acc)"/>
+        <text x="60" y="411" style="font-size:13px;font-weight:700;fill:var(--acc)" text-anchor="middle">3</text>
+        <text x="86" y="402" style="font-size:13.5px;font-weight:700;fill:var(--ink)">证据链收敛</text>
+        <text x="86" y="422" style="font-size:12px;fill:var(--ink2)">用可计算条件替代拍脑袋停机 → 打通「收敛」与「正确」</text>
+      </g>
+      <g>
+        <circle cx="470" cy="406" r="15" style="fill:var(--red-bg);stroke:var(--red)"/>
+        <text x="470" y="411" style="font-size:13px;font-weight:700;fill:var(--red)" text-anchor="middle">!</text>
+        <text x="496" y="402" style="font-size:13.5px;font-weight:700;fill:var(--red)">拒答门</text>
+        <text x="496" y="422" style="font-size:12px;fill:var(--ink2)">承认自己没定 → 这是唯一能测出正确性的出口</text>
+      </g>
+    
+    </g>
+  </svg>
+  <p class="lead" style="margin-top:0">读法：上面一行是"系统怎么做"，中间一行是"怎么判断它成了"，下面一行是"本文补的四块拼图"。三者缺一，<strong>共识质量</strong>就无法测量。</p>
+
+  <h3>8.2 与相邻范式的区别</h3>
+  <table>
+    <thead><tr><th style="width:20%">范式</th><th style="width:16%">Agent 是否互见</th><th style="width:16%">信息结构</th><th style="width:24%">失败模式</th><th>本文关系</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Self-Consistency</strong></td>
+        <td>互不可见</td>
+        <td>完全隔离</td>
+        <td>采样多样性不足时退化为重复采样</td>
+        <td>可视为"轮数=1 的辩论"。多样性由温度提供，而非由观点差异提供</td>
+      </tr>
+      <tr>
+        <td><strong>多数投票</strong></td>
+        <td>互不可见</td>
+        <td>完全隔离</td>
+        <td>相关性错误被放大成"伪多数"</td>
+        <td>本文第 5.1 节证明这是不够的聚合器</td>
+      </tr>
+      <tr>
+        <td><strong>Mixture-of-Agents</strong></td>
+        <td>互可见</td>
+        <td>分层，全量共享</td>
+        <td>层数增加只放大上层判断的误差</td>
+        <td>互补型协作，与辩论的"对抗"轴不同，常与机制二组合使用</td>
+      </tr>
+      <tr>
+        <td><strong>Debating Debaters</strong>（Irving 等）</td>
+        <td>互可见</td>
+        <td>对称全量</td>
+        <td>陪审团式判断训练，辩论本身非部署组件</td>
+        <td>训练时用辩论、推理时用单 Agent；本文讨论的是推理期仍保留辩论</td>
+      </tr>
+      <tr>
+        <td><strong>Reflexion / 自我修正</strong></td>
+        <td>只有自己</td>
+        <td>单 Agent 闭环</td>
+        <td>无外部锚点时容易自我说服</td>
+        <td>本文的机制三本质上是把"自我修正"改造成"证据驱动修正"</td>
+      </tr>
+      <tr>
+        <td><strong>多源事实核查</strong></td>
+        <td>互不可见</td>
+        <td>来源隔离</td>
+        <td>来源之间其实同源时无法察觉</td>
+        <td>本文机制一就是给多源核查补上的同源检测</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>8.3 什么时候该用，什么时候不该</h3>
+  <div class="tagrow" style="margin-bottom:6px">
+    <span class="tag g">值得用</span>
+    <span class="tag g">有客观判据的题：数学、代码可执行验证、事实核查</span>
+    <span class="tag g">单次调用错误率高、但可给出验证方法的领域</span>
+    <span class="tag g">需要多来源交叉确认、且来源可以被打指纹的场景</span>
+    <span class="tag g">正确性优先于延迟与成本的场景</span>
+  </div>
+  <div class="tagrow">
+    <span class="tag r">不值得用</span>
+    <span class="tag r">开放式创作、文案、策略发散——没有唯一正确答案</span>
+    <span class="tag r">简单任务——单 Agent 一次就对的场景，辩论是纯开销</span>
+    <span class="tag r">所有 Agent 共享同一份不可信输入——只会更快地一起错</span>
+    <span class="tag r">强延迟约束——5 轮辩论的时延通常不可接受</span>
+    <span class="tag r">无法验证正确性的任务——再多轮也判不出对错</span>
+  </div>
+  <div class="box note">
+    <span class="lb">判断准则</span>
+    <p>问自己一个问题：<strong>"如果两个 Agent 意见相反，我有没有办法判定谁对？"</strong>能，辩论有价值；不能，辩论只是在放大噪声，此时应该做的是补充外部锚点（检索、工具、执行环境），而不是增加 Agent 数量。</p>
+  </div>
+
+  <h3>8.4 全文要点回顾</h3>
+  <ol>
+    <li><strong>默认机制不成立。</strong>自由辩论 + 多数投票不能可靠给出正确答案。</li>
+    <li><strong>三个病根。</strong>亲和多数（表态使占比上升）、相关性错误（同源污染制造伪共识）、投票是弱聚合器（对 LLM 错误过度自信）。</li>
+    <li><strong>独立性校验。</strong>来源指纹分层 + DSU 聚类去重，把"N 票"还原成"k 份独立证据"。</li>
+    <li><strong>信息不对称 + 强制证据。</strong>Answer 阶段隔离上下文，Critique 阶段禁止重复他人结论；主张必须外源，等级 L2 以下不计入结论。</li>
+    <li><strong>按证据链收敛。</strong>用五条可计算的停机条件替代拍脑袋，独立性覆盖率不足时<em>必须拒答</em>。</li>
+    <li><strong>度量共识质量。</strong>准确率必须与覆盖率成对报告；任何机制都要靠消融实验证明贡献。</li>
+    <li><strong>最低成本的三个改动。</strong>来源指纹与聚类、证据 verify、拒答门——都不需要改变模型的调用方式。</li>
+  </ol>
+</section>
+
+<footer>
+  <p><strong>关于本文档</strong>：这是一份围绕"多 Agent 辩论的收敛判定"这一知识点整理的独立学习文档，主题参考自抖音技术科普视频《三个 Agent 辩论几轮就能定对错？这道题 90% 的人答不上来》（作者：先先贝ᴗ.）。文档中的机制拆解、伪代码、评估指标表、反模式清单与概念地图为围绕该主题的推导与扩写，非视频逐字转录。</p>
+  <p>全文为单文件 HTML，图示均为内联 SVG，可离线阅读与存档。所有 CSS 与脚本内联，无任何外部依赖。</p>
+</footer>
+</main>
+</div>
+</body>
+</html>
