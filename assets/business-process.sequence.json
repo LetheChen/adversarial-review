@@ -2,7 +2,7 @@
   "schema_version": 1,
   "diagram_type": "sequence",
   "meta": {
-    "title": "对抗性审查面板 · 端到端业务流程",
+    "title": "对抗性复核 · 端到端业务流程",
     "subtitle": "角色竖排成列、时间自上而下：提交 → 定规 → 并行取证 → R1 独立结论 → 落盘质询 → 收敛定档；任一指标见底即停",
     "output": "assets/business-process.html",
     "viewBox": [

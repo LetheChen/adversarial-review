@@ -1,10 +1,10 @@
 ---
-name: adversarial-review-panel
+name: adversarial-review
 description: 把分析文档/方案/代码改动交给**多个独立审查视角**做对抗性审查（红队复核）：默认用原生 subagent 并行起 2-4 个、取证方法互不相同，跨 harness 时改用外部通道（claude code / codex CLI 子进程）；单轮、多轮交叉质询、可计算的收敛判定，产出 REVIEW- 文档。当用户说"发给claude code审核""让claude对抗性审查""让codex审核""红队审一下""发给团队审核""团队审核N轮""让它们吵几轮""多轮审核讨论""独立复核这份分析/结论""起几个subagent审一下"时使用——即使只说"审一下这个方案"也应触发。
 agent_created: true
 ---
 
-# 对抗性审查面板（多视角对抗 · 单轮 / N 轮）
+# 对抗性复核（多视角对抗 · 单轮 / N 轮）
 
 ## 0. 一句话流程
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""adversarial-review-panel 辅助脚本：提取 session/thread id + 核对当次真实模型 + 记账。
+"""adversarial-review 辅助脚本：提取 session/thread id + 核对当次真实模型 + 记账。
 
 仅用于 **CLI 子进程执行层**（codex exec / claude -p）。原生 subagent 执行层没有外部会话，
 本脚本不适用——那条路径的记账靠 REVIEW 文档里的账本（见 SKILL.md §5）。

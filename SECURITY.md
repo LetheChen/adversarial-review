@@ -15,7 +15,7 @@ Only the latest minor version receives security fixes.
 
 **Please do not file a public issue.** Use one of:
 
-- **GitHub Security Advisories** (preferred): [Report a vulnerability](https://github.com/LetheChen/adversarial-review-panel/security/advisories/new) — private channel, tracked, disclosable.
+- **GitHub Security Advisories** (preferred): [Report a vulnerability](https://github.com/LetheChen/adversarial-review/security/advisories/new) — private channel, tracked, disclosable.
 - **Email**: lethe@chen.com (PGP key TBD if requested).
 
 What to include:
