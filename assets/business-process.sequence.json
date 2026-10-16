@@ -1,0 +1,267 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "对抗性审查面板 · 端到端业务流程",
+    "subtitle": "角色竖排成列、时间自上而下：提交 → 定规 → 并行取证 → R1 独立结论 → 落盘质询 → 收敛定档；任一指标见底即停",
+    "output": "assets/business-process.html",
+    "viewBox": [
+      1180,
+      650
+    ],
+    "animation": "trace",
+    "column_fit": "spread",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "intake",
+        "label": "① 触发与定规",
+        "focus": [
+          "user",
+          "host",
+          "exec"
+        ],
+        "note": "提交、定规、派单三步定下人数与取证法。"
+      },
+      {
+        "id": "evidence",
+        "label": "② 取证与独立结论",
+        "focus": [
+          "exec",
+          "reviewer",
+          "ledger"
+        ],
+        "note": "红队上下文互不可见，结论先落盘再说话。"
+      },
+      {
+        "id": "converge",
+        "label": "③ 质询与收敛",
+        "focus": [
+          "host",
+          "reviewer",
+          "ledger",
+          "decision",
+          "user"
+        ],
+        "note": "五指标记账判定收敛，缺证即停。"
+      }
+    ]
+  },
+  "participants": [
+    {
+      "id": "user",
+      "type": "external",
+      "label": "用户",
+      "sublabel": "提交审查"
+    },
+    {
+      "id": "host",
+      "type": "backend",
+      "label": "主持人",
+      "sublabel": "协议层·对称裁决"
+    },
+    {
+      "id": "exec",
+      "type": "messagebus",
+      "label": "执行层",
+      "sublabel": "可插拔"
+    },
+    {
+      "id": "reviewer",
+      "type": "security",
+      "label": "审查者池",
+      "sublabel": "红队·互不可见"
+    },
+    {
+      "id": "ledger",
+      "type": "database",
+      "label": "文件账本",
+      "sublabel": "唯一权威"
+    },
+    {
+      "id": "decision",
+      "type": "frontend",
+      "label": "收敛判定",
+      "sublabel": "五指标闸门"
+    }
+  ],
+  "segments": [
+    {
+      "from": 162,
+      "to": 284,
+      "label": "① 触发与定规"
+    },
+    {
+      "from": 288,
+      "to": 336,
+      "label": "② 取证与独立结论"
+    },
+    {
+      "from": 342,
+      "to": 412,
+      "label": "③ 落盘质询与裁决"
+    },
+    {
+      "from": 418,
+      "to": 544,
+      "label": "④ 收敛定档"
+    }
+  ],
+  "messages": [
+    {
+      "id": "submit",
+      "from": "user",
+      "to": "host",
+      "y": 186,
+      "label": "提交方案或代码",
+      "variant": "emphasis"
+    },
+    {
+      "id": "charter",
+      "from": "host",
+      "to": "exec",
+      "y": 228,
+      "label": "派单：人数与取证法",
+      "variant": "default"
+    },
+    {
+      "id": "dispatch",
+      "from": "exec",
+      "to": "reviewer",
+      "y": 270,
+      "label": "每人一个干净上下文",
+      "variant": "dashed"
+    },
+    {
+      "id": "land-r1",
+      "from": "reviewer",
+      "to": "ledger",
+      "y": 312,
+      "label": "R1 独立结论先落盘",
+      "variant": "emphasis"
+    },
+    {
+      "id": "objection",
+      "from": "reviewer",
+      "to": "host",
+      "y": 354,
+      "label": "异议与待裁点",
+      "variant": "return"
+    },
+    {
+      "id": "adjudicate",
+      "from": "host",
+      "to": "reviewer",
+      "y": 396,
+      "label": "裁决对称下发",
+      "variant": "return"
+    },
+    {
+      "id": "ledger-metrics",
+      "from": "ledger",
+      "to": "decision",
+      "y": 438,
+      "label": "逐轮五指标记账",
+      "variant": "return"
+    },
+    {
+      "id": "deliver",
+      "from": "decision",
+      "to": "user",
+      "y": 480,
+      "label": "REVIEW 文档 + 处置清单回读",
+      "variant": "emphasis"
+    },
+    {
+      "id": "halt",
+      "from": "decision",
+      "to": "host",
+      "y": 522,
+      "label": "缺证即停：只报缺证",
+      "variant": "security"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "user",
+      "from": 172,
+      "to": 200,
+      "type": "external"
+    },
+    {
+      "participant": "host",
+      "from": 212,
+      "to": 410,
+      "type": "backend"
+    },
+    {
+      "participant": "host",
+      "from": 508,
+      "to": 536,
+      "type": "backend"
+    },
+    {
+      "participant": "exec",
+      "from": 236,
+      "to": 284,
+      "type": "messagebus"
+    },
+    {
+      "participant": "reviewer",
+      "from": 258,
+      "to": 366,
+      "type": "security"
+    },
+    {
+      "participant": "ledger",
+      "from": 300,
+      "to": 452,
+      "type": "database"
+    },
+    {
+      "participant": "decision",
+      "from": 424,
+      "to": 536,
+      "type": "frontend"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "三条设计原则",
+      "items": [
+        "文件是账本（唯一权威），会话只是加速器",
+        "产物是契约，执行层可插拔",
+        "多样性来自取证方法，红队上下文互不可见"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "收敛判定可计算",
+      "items": [
+        "账本五指标：R_t / E_t / C_t / S_t / K_t",
+        "R_t 归零只代表无新分歧，不等于收敛",
+        "E_t 归零且 R_t 仍大于零，两轮即僵局升级"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "收尾三种结局",
+      "items": [
+        "收敛：写 REVIEW- 文档，处置清单逐条回读",
+        "缺证：只报缺证，不批量改",
+        "未收敛：如实说明谁有分歧，不假装结束"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "最容易死的四件事",
+      "items": [
+        "忘记把上下文共享关掉，红队全体附和",
+        "执行层不关原生并发，撞上限",
+        "裁决对称下发，必然假收敛",
+        "只信编辑回执，处置清单没落地"
+      ]
+    }
+  ]
+}
