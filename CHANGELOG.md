@@ -11,10 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Renamed: `对抗性审查面板 / Adversarial Review Panel` → `对抗性复核 / Adversarial Review`.** "`面板`" / "`panel`" implied a UI, and this skill has none — it is a prompt workflow plus a ledger script. "`对抗性`" is kept because the red-team framing is still what it does; note that the 1.1.x design actually leans on *isolation* (reviewers cannot see each other, each gathers evidence by a different method) and *computable convergence* (R_t/E_t/C_t/S_t/K_t) rather than on conflict as such.
 - **Breaking for installers**: the machine name changed from `adversarial-review-panel` to `adversarial-review` (`SKILL.md` frontmatter `name:`). Anyone who installed the old name must re-install; references to the old identifier will not resolve.
 - Repository renamed to `LetheChen/adversarial-review` — the old GitHub URL redirects.
-- The end-to-end diagram (`assets/business-process.html`) and the hand-written variant (`业务流程图-对抗性复核.html`) carry the new name in their titles.
+- The end-to-end diagram (`assets/business-process.html`) carries the new name in its title.
 
-### Added
-- `业务流程图-对抗性复核.html` — hand-written vertical swimlane, kept alongside the archify-generated horizontal sequence diagram as a second view of the same process.
+### Removed
+- `业务流程图-对抗性复核.html` — the hand-written vertical swimlane is gone. Side by side, the archify sequence diagram reads better: the roles become columns and every arrow points the way the message actually flows. `assets/business-process.html` is now the single end-to-end diagram; the hand-written ①–⑮ step-by-step walkthrough survives only in git history.
 
 ## [1.1.2] - 2026-10-16
 
